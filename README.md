@@ -28,7 +28,7 @@ As a player, I want to place roads, settlements and cities so I can expand my ci
 As a player, I want to roll dice and receive resources based on the board so I can build more structures.
 
 ### User Story 3
-As a player, I want to be able to start a game on the same device with 2-4 and be able to play on the same board, switching turns.
+As a player, I want to be able to start a game on the same device with 2-4 players and be able to play on the same board, switching turns.
 
 ### User Story 4
 As a player, I want to be able to select a city from the pre-determined list before starting the game so that weather can influence conditions in the game.
@@ -40,15 +40,9 @@ As a player, I want to see everyone's current total points, how much of each res
 As a player, I want a history section so I can look back on previous moves made by all players.
 
 ### User Story 7
-As a player, I want to be able to trade with players and the bank to get other resources for different prices.
-
-### User Story 8
-As a player, I want to move the robber and steal 1 random resource from another play adjacent to the robber's hex.
-
-### User Story 9
 As a player, I want to get the conditional 2 points if I have the longest road (minimum 5 roads)
 
-### User Story 10
+### User Story 8
 As a player, I want to win the game (stop the game) if someone reaches 10 points
 
 --
