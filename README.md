@@ -96,9 +96,8 @@ Main path:
 9. The system allows the active player to continue their turn
 
 Alternate path:
-4. If the dice result is 7, no resources are distributed, and the robber action is triggered
-5. If a hex is blocked by the robber, players do not receive resources from that hex
-5. If no players have settlements or cities adjacent to the matching hexes, no resources are distributed
+4. If the dice result is 7, no resources are distributed.
+5. If no players have settlements or cities adjacent to the matching hexes, no resources are distributed.
 
 Post conditions:
 - The dice result is displayed
@@ -112,17 +111,16 @@ Preconditions:
 - The game has been launched
 
 Main path:
-1.The system prompts the player to select the number of players (2–4)
-2. The system prompts each player to enter their name
-3. The player selects the desired number of players
-4. The system prompts each player to enter their name.
-5. Each player enters their name and confirms their selection
-6. The system initializes a shared game board
-7. The system assigns each player a starting position 
-8. The system determines the order of turns 
-9. The system displays the game board and indicates which player's turn it is 
-10. Players take turns interacting with the same board 
-11. After a player's turn ends, the system switches control to the next player
+1. The system prompts the player to select the number of players (2–4)
+2. The player selects the desired number of players
+3. The system prompts each player to enter their name.
+4. Each player enters their name and confirms their selection
+5. The system initializes a shared game board
+6. The system assigns each player a starting position 
+7. The system determines the order of turns 
+8. The system displays the game board and indicates which player's turn it is 
+9. Players take turns interacting with the same board 
+10. After a player's turn ends, the system switches control to the next player
 
 Alternate path:
 2. If the player selects fewer than 2 or more than 4 players, the system does not allow the selection.
