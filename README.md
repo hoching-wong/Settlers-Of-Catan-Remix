@@ -19,6 +19,81 @@ A multiplayer strategy board game where players compete to build and expand thei
 
 ---
 
+## Game Rules
+
+### 1. Game Setup
+- The game supports 2–4 players playing locally on the same device.
+- Each player enters a unique name before starting the game.
+- Players select a city from a predefined list to determine the weather conditions for the game.
+- After the game starts, players take turns placing their initial settlements and roads.
+- Initial placement follows a snake order (forward order followed by reverse order):
+  - **2 players:** P1 → P2 → P2 → P1
+  - **3 players:** P1 → P2 → P3 → P3 → P2 → P1
+  - **4 players:** P1 → P2 → P3 → P4 → P4 → P3 → P2 → P1
+- During each placement turn, the player places one settlement followed by one road adjacent to that settlement.
+- Initial placements do not require resources.
+- Each player starts regular gameplay with two settlements and two roads.
+
+### 2. Turn Rules
+- After the initial placement phase, regular gameplay begins with Player 1.
+- Players take turns in ascending player order (P1 → P2 → P3 → P4, depending on the number of players), returning to Player 1 after the last player finishes their turn.
+- At the beginning of each turn, the active player rolls two six-sided dice once.
+- The sum of the two dice determines which tiles produce resources.
+- After rolling the dice and collecting resources, the active player can build roads, settlements, or cities if they have sufficient resources and the selected locations are valid.
+- Once the active player ends their turn, the game proceeds to the next player.
+
+### 3. Resource Production
+- The game uses five resources: Lumber, Brick, Wool, Grain, and Ore.
+- The active player rolls two six-sided dice, and their results are added together.
+- Tiles with number tokens matching the dice total produce resources.
+- Players with settlements or cities adjacent to those tiles receive the corresponding resources:
+  - **Settlement:** Produces 1 resource.
+  - **City:** Produces 2 resources.
+- Weather-based production bonuses are applied when applicable.
+- If the dice total is 7, no resources are distributed.
+- If no players have settlements or cities adjacent to the matching tiles, no resources are distributed.
+
+### 4. Building Rules
+- Players can build roads, settlements, and cities by spending the required resources.
+- The resource costs for each structure are:
+  - **Road:** 1 Lumber + 1 Brick
+  - **Settlement:** 1 Lumber + 1 Brick + 1 Wool + 1 Grain
+  - **City:** 2 Grain + 3 Ore
+- Roads are placed on edges, while settlements and cities are placed on vertices.
+- A road must connect to the player's existing road network or building, following the game's placement rules.
+- A new settlement must connect to the player's road network, except during the initial placement phase.
+- A settlement must be at least two edges away from any other settlement or city, regardless of ownership.
+- A city can only be built by upgrading an existing settlement owned by the player.
+- Each settlement is worth 1 victory point, while each city is worth 2 victory points. Upgrading a settlement to a city increases the player's total victory points by 1.
+
+### 5. Longest Road
+- A player must have a continuous road of at least 5 segments to qualify for the Longest Road bonus.
+- The player with the longest qualifying road receives 2 additional victory points.
+- If another player builds a longer continuous road than the current holder, the Longest Road bonus transfers to that player.
+- When the bonus transfers, the previous holder loses the 2 additional victory points.
+
+### 6. Weather Bonus
+- When the game starts, the system retrieves the selected city's current weather conditions using the Open-Meteo Weather API.
+- The weather conditions remain fixed throughout the game.
+- Each weather category doubles the production of one resource:
+  - **Sunny (WMO codes 0–1):** Lumber ×2
+  - **Cloudy (WMO codes 2–3):** Brick ×2
+  - **Rainy (WMO codes 51–67, 80–82):** Grain ×2
+  - **Snowy (WMO codes 71–77, 85–86):** Wool ×2
+  - **Stormy (WMO codes 95–99):** Ore ×2
+- Weather bonuses only apply when the corresponding resource-producing tiles are activated by the dice.
+- Other weather conditions, such as fog, do not provide a resource production bonus.
+- If the API request fails or the weather condition does not have an assigned bonus, normal resource production applies.
+
+### 7. Victory Conditions
+- Each settlement is worth 1 victory point.
+- Each city is worth 2 victory points.
+- The player holding the Longest Road bonus receives 2 additional victory points.
+- The first player to reach 10 victory points wins the game.
+- The game ends once a winner is determined.
+
+---
+
 ## User Stories
 
 ### User Story 1
