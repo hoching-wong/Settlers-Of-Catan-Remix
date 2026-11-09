@@ -37,12 +37,9 @@ As a player, I want to be able to select a city from the pre-determined list bef
 As a player, I want to see everyone's current total points, how much of each resource they have and the weather conditions.
 
 ### User Story 6
-As a player, I want a history section so I can look back on previous moves made by all players.
-
-### User Story 7
 As a player, I want to get the conditional 2 points if I have the longest road (minimum 5 roads)
 
-### User Story 8
+### User Story 7
 As a player, I want to win the game (stop the game) if someone reaches 10 points
 
 --
@@ -165,6 +162,16 @@ Post conditions:
 - The corresponding weather conditions are retrieved and applied 
 - The game begins with weather conditions that may influence gameplay
 
+### Use Case 5
+
+
+### Use Case 6
+
+
+### Use Case 7
+
+
+
 ---
 
 ## Minimal Viable Product (MVP)
@@ -180,11 +187,168 @@ Post conditions:
 
 ## Entities
 
-### Entity 1
+### Entity 1: Game
+**Instance variables**
+- Board board
+- List<Player> players
+- Player currentPlayer
+- GamePhase phase
+- WeatherData weather
+- int currentPlayerIndex
 
-### Entity 2
+**Methods**
+- startGame()
+- startSetupPhase()
+- endTurn()
+- getCurrentPlayer()
+- checkVictory()
+- getWinner()
 
-(Add additional entities as needed.)
+### Entity 2: Board
+**Instance variables**
+- List<Tile> tiles
+- List<Vertex> vertices
+- List<Edge> edges
+
+**Methods**
+- getTile(int tileId)
+- getVertex(int vertexId)
+- getEdge(int edgeId)
+- getMatchingTiles(int diceTotal)
+- isValidSettlementLocation(Vertex vertex)
+- isValidRoadLocation(Edge edge)
+- placeBuilding(Vertex vertex, Building building)
+- placeRoad(Edge edge, Road road)
+
+### Entity 3: Tile
+**Instance variables**
+- TerrainType terrain
+- ResourceType resource
+- int numberToken
+- List<Vertex> vertices
+- List<Edge> edges
+
+**Methods**
+- getResourceType()
+- getNumberToken()
+- getVertices()
+- getEdges()
+
+### Entity 4: Vertex
+**Instance variables**
+- int id
+- List<Edge> edges
+- Building building
+
+**Methods**
+- isOccupied()
+- getBuilding()
+- setBuilding(Building building)
+- getAdjacentVertices()
+- getAdjacentEdges()
+
+### Entity 5: Edge
+**Instance variables**
+- int id
+- Vertex vertex1
+- Vertex vertex2
+- Road road
+
+**Methods**
+- isOccupied()
+- getRoad()
+- setRoad(Road road)
+- getAdjacentEdges()
+
+### Entity 6: Player
+**Instance variables**
+- String name
+- ResourceHand resources
+- List<Building> buildings
+- List<Road> roads
+- int victoryPoints
+
+**Methods**
+- addBuilding(Building building)
+- addRoad(Road road)
+- addVictoryPoints(int points)
+- getVictoryPoints()
+
+### Entity 7: ResourceHand
+**Instance variables**
+- Map<ResourceType, Integer> resources
+
+**Methods**
+- addResource(ResourceType type, int amount)
+- removeResource(ResourceType type, int amount)
+- getResourceCount(ResourceType type)
+- canAfford(Map<ResourceType, Integer> cost)
+- spendResources(Map<ResourceType, Integer> cost)
+- getTotalResources()
+
+### Entity 8: Building (abstract class)
+**Instance variables**
+- Player owner
+
+**Methods**
+- getOwner()
+- getVictoryPoints() (abstract)
+
+### Entity 9: Settlement (extends Building)
+**Instance variables**
+- No additional instance variables.
+
+**Methods**
+- getVictoryPoints()
+
+### Entity 10: City (extends Building)
+**Instance variables**
+- No additional instance variables.
+
+**Methods**
+- getVictoryPoints()
+
+### Entity 11: Road
+**Instance variables**
+- Player owner
+- Edge location
+
+**Methods**
+- getOwner()
+- getLocation()
+- Supporting entities and value objects
+
+### Entity 12: WeatherData
+**Instance variables**
+- WeatherType condition
+- ResourceType bonusResource
+- int multiplier
+
+**Methods**
+- getCondition()
+- getBonusResource()
+- getMultiplier()
+- hasBonus()
+
+### Entity 13: Dice
+**Instance variables**
+- int die1
+- int die2
+
+**Methods**
+- roll()
+- getDie1()
+- getDie2()
+- getTotal()
+
+**Enumerations**
+
+These are supporting types rather than regular entities.
+- **Enum:**    Values
+- **GamePhase:**    SETUP, PLAYING, GAME_OVER
+- **ResourceType:**    LUMBER, BRICK, GRAIN, WOOL, ORE
+- **TerrainType:**    FOREST, HILLS, FIELDS, PASTURE, MOUNTAINS, DESERT
+- **WeatherType:**    SUNNY, CLOUDY, RAINY, SNOWY, STORMY, FOG
 
 ---
 
