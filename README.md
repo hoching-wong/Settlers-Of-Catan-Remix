@@ -15,7 +15,7 @@
 ### Domain
 Our own rendition of the classic board game Settlers of Catan. 
 
-A multiplayer strategy board game where players compete to build and expand their civilizations. Place roads, settlements (1 point each) and cities (2 points) and roll dices to gather resources. Build more infrastructure, buy developement cards, block other players, steal resources and be the first to 10 points.
+A multiplayer strategy board game where players compete to build and expand their civilizations. Place roads, settlements (1 point each) and cities (2 points) and roll dices to gather resources. Build more infrastructure, block other players, and be the first to 10 points.
 
 ---
 
