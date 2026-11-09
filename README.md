@@ -113,8 +113,8 @@ Main path:
 3. The system prompts each player to enter their name.
 4. Each player enters their name and confirms their selection
 5. The system initializes a shared game board
-6. The system determines the initial placement order, and players take turns placing their starting settlements and roads.
-7. Once all players have placed their initial settlements and roads, the system determines the regular turn order.
+6. The system establishes the initial placement order using a snake order (forward order followed by reverse order), and each player places one settlement and one adjacent road during each placement turn.
+7. Once all players have placed two settlements and two roads, regular gameplay begins with Player 1, following the player order (P1 → P2 → P3 → P4, depending on the number of players).
 8. The system displays the game board and indicates which player's turn it is 
 9. Players take turns interacting with the same board 
 10. After a player's turn ends, the system switches control to the next player
