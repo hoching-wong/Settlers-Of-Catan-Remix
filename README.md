@@ -385,6 +385,7 @@ Our game will use the Open-Meteo Weather API to retrieve real-time weather condi
 
 ---
 
+
 ## How to Run
 
 ### Requirements
@@ -405,27 +406,27 @@ Our game will use the Open-Meteo Weather API to retrieve real-time weather condi
 7. Locate the main Java class containing the `main()` method.
 8. Run the `main()` method to launch the game in a Java Swing window.
 
-
 ### Starting a Game
 
 1. Select the number of players (2–4 players).
-2. Select a city from the list of predefined cities.
-3. Click **Start Game** to begin.
-4. The game will retrieve the selected city's current weather conditions using the Open-Meteo Weather API.
-5. The weather conditions will remain fixed throughout the game and determine which resource receives a production bonus.
-6. Players take turns placing their initial settlements and roads in a snake order (forward order followed by reverse order):
+2. Enter a unique name for each player.
+3. Select a city from the list of predefined cities.
+4. Click **Start Game** to begin.
+5. The game will retrieve the selected city's current weather conditions using the Open-Meteo Weather API.
+6. The weather conditions will remain fixed throughout the game and determine which resource receives a production bonus.
+7. Players take turns placing their initial settlements and roads in a snake order (forward order followed by reverse order):
   - **2 players:** P1 → P2 → P2 → P1
   - **3 players:** P1 → P2 → P3 → P3 → P2 → P1
   - **4 players:** P1 → P2 → P3 → P4 → P4 → P3 → P2 → P1
-7. During each placement turn, the player places one settlement followed by one adjacent road.
-8. Once all players have placed two settlements and two roads, regular gameplay begins.
-9. Players take turns rolling dice, collecting resources, and building roads, settlements, and cities.
-10. The first player to reach 10 victory points wins the game.
-
+8. During each placement turn, the player places one settlement followed by one adjacent road.
+9. Once all players have placed two settlements and two roads, regular gameplay begins.
+10. Players take turns rolling dice, collecting resources, and building roads, settlements, and cities.
+11. The first player to reach 10 victory points wins the game.
 
 ### Weather API
 
 An internet connection is required to retrieve weather data when starting a new game. If the API request fails or the weather condition does not have an assigned bonus, the game will continue with normal resource production.
+
 
 ---
 
