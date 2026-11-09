@@ -90,7 +90,7 @@ Main path:
 3. The system displays the total dice result
 4. The system identifies all hexes with a matching number
 5. The system checks which players have settlements or cities adjacent to those hexes
-6. The system calculates the resources each eligible player should receive
+6. The system calculates the resources each eligible player should receive, applying the weather-based production bonus when applicable.
 7. The system adds the resources to each player's inventory
 8. The system updates the resource counts displayed on the screen
 9. The system allows the active player to continue their turn
@@ -116,8 +116,8 @@ Main path:
 3. The system prompts each player to enter their name.
 4. Each player enters their name and confirms their selection
 5. The system initializes a shared game board
-6. The system assigns each player a starting position 
-7. The system determines the order of turns 
+6. The system determines the initial placement order, and players take turns placing their starting settlements and roads.
+7. Once all players have placed their initial settlements and roads, the system determines the regular turn order.
 8. The system displays the game board and indicates which player's turn it is 
 9. Players take turns interacting with the same board 
 10. After a player's turn ends, the system switches control to the next player
@@ -125,8 +125,8 @@ Main path:
 Alternate path:
 2. If the player selects fewer than 2 or more than 4 players, the system does not allow the selection.
 4. If a player enters an empty or invalid name, the system prompts them to enter a valid name.
-5. If two players enter the same name, the system prompts them to choose different names.
-10. If a player attempts to perform an action during another player's turn, the system prevents the action.
+4. If two players enter the same name, the system prompts them to choose different names.
+9. If a player attempts to perform an action during another player's turn, the system prevents the action.
 
 Post-conditions:
 - A game with 2–4 players is successfully initialized
@@ -135,33 +135,35 @@ Post-conditions:
 
 ### Use Case 4
 Primary actor: Player
-Goal: Allows players to select a city from a predetermined list before starting the game so that the city's weather conditions can influence gameplay
+
+Goal: Allows players to select a city before starting the game and use its real-time weather conditions to determine resource production bonuses.
+
 Preconditions:
-- The game has been launched
-- Players are setting up a new game
+- The game has been launched.
+- Players are setting up a new game.
 
 Main path:
-1. A player opens the city selection menu 
-2. The system displays a predetermined list of available cities 
-3. The player selects a city from the list 
-4. The system retrieves the current weather conditions for the selected city 
-5. The system displays the selected city and its weather information 
-6. The player confirms their city selection 
-7. The system saves the selected city and its weather conditions 
-8. The player proceeds to start the game 
-9. The system applies the corresponding weather effects to the game 
-10. The game begins with the selected city's weather conditions influencing gameplay
+1. The system displays a predefined list of available cities.
+2. The player selects a city from the list.
+3. The player clicks the Start Game button.
+4. The system retrieves the predefined coordinates of the selected city.
+5. The system sends a request to the Open-Meteo Weather API.
+6. The system receives the current weather code from the API.
+7. The system classifies the weather code and determines the corresponding resource production bonus.
+8. The system displays the selected city, weather conditions, and resource production bonus.
+9. The system saves the weather conditions and production bonus for the entire game.
+10. The game proceeds to the initial settlement and road placement phase.
 
 Alternate path:
-3. If the player does not select a city, the system prompts them to make a selection before continuing
-4. If weather information cannot be retrieved, the system displays an error message and allows the player to retry
-4. If weather information is unavailable, the system applies default weather conditions
-6. If the player changes their mind, they can return to the city selection menu and select a different city
+2. If the player does not select a city, the system prompts them to select one before starting the game.
+5. If the API request fails, the system continues without a weather bonus.
+7. If the weather code does not correspond to any predefined weather category, the system applies normal resource production.
 
-Post conditions:
-- A city is selected and saved for the game 
-- The corresponding weather conditions are retrieved and applied 
-- The game begins with weather conditions that may influence gameplay
+Postconditions:
+- The selected city is saved for the game.
+- The weather conditions and corresponding resource production bonus are determined if weather data is available.
+- The weather bonus remains fixed throughout the game.
+- The game proceeds to the initial placement phase.
 
 ---
 
