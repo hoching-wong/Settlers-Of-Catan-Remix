@@ -108,21 +108,30 @@ Our game will use the Open-Meteo Weather API to retrieve real-time weather condi
 
 1. Open the GitHub repository and click the green **Code** button.
 2. Select **HTTPS** and copy the repository URL.
-3. Open IntelliJ IDEA and select **Clone Repository** (or **File → New → Project from Version Control**).
+3. Open IntelliJ IDEA and select **Clone Repository**.
 4. Paste the copied URL into the **URL** field, choose a local directory, and click **Clone**.
 5. Wait for IntelliJ IDEA to open the project and load the Maven dependencies.
 6. Go to **File → Project Structure → Project** and make sure the Project SDK is set to **JDK 26**.
 7. Locate the main Java class containing the `main()` method.
 8. Run the `main()` method to launch the game in a Java Swing window.
 
+
 ### Starting a Game
 
-1. Select a city from the list of predefined cities.
-2. Click **Start Game** to begin.
-3. The game will retrieve the selected city's current weather conditions using the Open-Meteo Weather API.
-4. The weather conditions will remain fixed throughout the game and determine which resource receives a production bonus.
-5. Players take turns rolling dice, collecting resources, and building roads, settlements, and cities.
-6. The first player to reach 10 victory points wins the game.
+1. Select the number of players (2–4 players).
+2. Select a city from the list of predefined cities.
+3. Click **Start Game** to begin.
+4. The game will retrieve the selected city's current weather conditions using the Open-Meteo Weather API.
+5. The weather conditions will remain fixed throughout the game and determine which resource receives a production bonus.
+6. Players take turns placing their initial settlements and roads in a snake order (forward order followed by reverse order):
+  - **2 players:** P1 → P2 → P2 → P1
+  - **3 players:** P1 → P2 → P3 → P3 → P2 → P1
+  - **4 players:** P1 → P2 → P3 → P4 → P4 → P3 → P2 → P1
+7. During each placement turn, the player places one settlement followed by one adjacent road.
+8. Once all players have placed two settlements and two roads, regular gameplay begins.
+9. Players take turns rolling dice, collecting resources, and building roads, settlements, and cities.
+10. The first player to reach 10 victory points wins the game.
+
 
 ### Weather API
 
