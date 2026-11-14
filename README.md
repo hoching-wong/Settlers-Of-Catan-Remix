@@ -566,8 +566,17 @@ These hold game rules that do not belong to a single entity. They have no state.
 
 ### Service 2: LongestRoadCalculator
 **Methods**
-- longestRoadOf(Player player, Board board) (longest continuous road, not counting paths broken by another player's settlement or city)
-- findHolder(List<Player> players, Board board, Player currentHolder) (returns the player who should hold Longest Road, or null; minimum 5 segments, a tie keeps the current holder)
+- longestRoadOf(Player player, Board board) (static; longest continuous road, not counting paths broken by another player's settlement or city)
+- findHolder(List<Player> players, Board board, Player currentHolder) (static; returns the player who should hold Longest Road, or null; minimum 5 segments, a tie keeps the current holder)
+
+`LongestRoadCalculator.MIN_ROAD_LENGTH` is 5. A road is the most of a player's roads that can be walked in one path without using any road twice, so branches count only their two longest arms and loops count every segment. A path cannot pass through a vertex that holds another player's settlement or city, but it may start or end there. A player's own buildings never break their road.
+
+`findHolder` rules:
+- The current holder keeps the title if their road is at least 5 and no other player's is longer.
+- Otherwise the title goes to the one player with the longest road (at least 5).
+- If the holder is broken or beaten and several other players tie for the longest road, or there is no holder and players tie at the top, nobody holds the title (null).
+
+Both methods only calculate. They do not change `Player.hasLongestRoad`, so the use case sets it from the result of `findHolder`, after any build that could change road lengths (a new road, or a settlement or city that breaks an opponent's road).
 
 **Enumerations**
 
