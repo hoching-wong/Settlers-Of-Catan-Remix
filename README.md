@@ -389,11 +389,14 @@ Post conditions:
 - Building building
 
 **Methods**
+- getId()
 - isOccupied()
 - getBuilding()
 - setBuilding(Building building)
-- getAdjacentVertices()
+- getAdjacentVertices() (the vertices one edge away)
 - getAdjacentEdges()
+
+Edges are added to a vertex only by constructing an `Edge`, which registers itself with both of its vertices.
 
 ### Entity 5: Edge
 **Instance variables**
@@ -403,10 +406,16 @@ Post conditions:
 - Road road
 
 **Methods**
+- getId()
+- getVertex1()
+- getVertex2()
+- getOtherVertex(Vertex vertex) (the endpoint that is not the given vertex; throws if the vertex is not on this edge)
 - isOccupied()
 - getRoad()
 - setRoad(Road road)
-- getAdjacentEdges()
+- getAdjacentEdges() (edges sharing a vertex with this one, not including itself)
+
+The constructor `Edge(int id, Vertex vertex1, Vertex vertex2)` registers the edge with both vertices and rejects null or identical vertices.
 
 ### Entity 6: Player
 **Instance variables**
@@ -417,12 +426,14 @@ Post conditions:
 - boolean hasLongestRoad
 
 **Methods**
-- addBuilding(Building building)
+- getName()
+- addBuilding(Building building) (only updates the player's list; the board sets the vertex)
 - removeBuilding(Building building)
-- addRoad(Road road)
+- addRoad(Road road) (only updates the player's list; the board sets the edge)
 - getResources()
-- getBuildings()
-- getRoads()
+- getBuildings() (unmodifiable view)
+- getRoads() (unmodifiable view)
+- hasLongestRoad()
 - setHasLongestRoad(boolean value)
 - getVictoryPoints() (computed: sum of building points, plus 2 if hasLongestRoad)
 
@@ -435,8 +446,10 @@ Post conditions:
 - removeResource(ResourceType type, int amount)
 - getResourceCount(ResourceType type)
 - canAfford(Map<ResourceType, Integer> cost)
-- spendResources(Map<ResourceType, Integer> cost)
+- spendResources(Map<ResourceType, Integer> cost) (throws and changes nothing if the hand cannot afford it)
 - getTotalResources()
+
+Negative amounts, and removing more than the hand holds, throw `IllegalArgumentException`.
 
 ### Entity 8: Building (abstract class)
 **Instance variables**
@@ -447,6 +460,8 @@ Post conditions:
 - getOwner()
 - getLocation()
 - getVictoryPoints() (abstract)
+
+The constructor is `protected` and rejects a null owner or location. `Settlement(Player owner, Vertex location)` and `City(Player owner, Vertex location)` are the public constructors.
 
 ### Entity 9: Settlement (extends Building)
 **Instance variables**
@@ -468,6 +483,7 @@ Post conditions:
 - Edge location
 
 **Methods**
+- Road(Player owner, Edge location) (rejects null arguments)
 - getOwner()
 - getLocation()
 
@@ -480,8 +496,8 @@ Post conditions:
 - int multiplier
 
 **Methods**
-- fromWmoCode(int code)
-- none() (no bonus; used when the API fails or the code has no category)
+- fromWmoCode(int code) (fog codes 45 and 48 give condition FOG with no bonus; a code with no category gives none())
+- none() (no bonus; used when the API fails or the code has no category. The condition and bonus resource are null and the multiplier is 1)
 - getCondition()
 - getBonusResource()
 - getMultiplier()
@@ -495,7 +511,7 @@ Post conditions:
 
 **Methods**
 - Dice(Random random) (a seeded Random can be passed in for testing)
-- roll()
+- roll() (returns void; read the result with getDie1(), getDie2() and getTotal(). The dice read 0 before the first roll)
 - getDie1()
 - getDie2()
 - getTotal()
@@ -507,7 +523,8 @@ Post conditions:
 - double longitude
 
 **Methods**
-- defaults() (the predefined city list)
+- CityLocation(String name, double latitude, double longitude)
+- defaults() (the predefined city list: Toronto, London, Tokyo, New York)
 - getName()
 - getLatitude()
 - getLongitude()
