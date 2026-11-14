@@ -364,11 +364,13 @@ Post conditions:
 - getEdge(int edgeId) (same)
 - getMatchingTiles(int diceTotal) (tiles whose token equals the total; 7 matches none, and the desert never matches)
 - getTilesAdjacentTo(Vertex vertex) (the 1 to 3 tiles that have the vertex as a corner)
-- isValidSettlementLocation(Vertex vertex, Player player, boolean isSetup)
-- isValidRoadLocation(Edge edge, Player player, Vertex setupAnchor) (setupAnchor is the settlement just placed during setup; null otherwise)
-- placeBuilding(Vertex vertex, Building building)
-- upgradeToCity(Vertex vertex, City city)
-- placeRoad(Edge edge, Road road)
+- isValidSettlementLocation(Vertex vertex, Player player, boolean isSetup) (the vertex must be on this board, empty, and have no occupied neighbour, so settlements and cities stay at least 2 edges apart whoever owns them; outside setup it must also touch one of the player's roads)
+- isValidRoadLocation(Edge edge, Player player, Vertex setupAnchor) (setupAnchor is the settlement just placed during setup; null otherwise. The edge must be on this board and empty. In setup it must touch the anchor. Otherwise it must connect to the player's own building or road, and an opponent's settlement or city blocks the connection through that vertex)
+- placeBuilding(Vertex vertex, Building building) (places a settlement and adds it to the owner's buildings; rejects a City, an occupied vertex, a mismatched location and a vertex from another board)
+- upgradeToCity(Vertex vertex, City city) (replaces the city owner's own settlement with the city, on the vertex and in the owner's buildings; rejects an empty vertex, an existing city, another player's settlement and a mismatched location)
+- placeRoad(Edge edge, Road road) (places a road and adds it to the owner's roads; rejects an occupied edge, a mismatched location and an edge from another board)
+
+The `place...` and `upgradeToCity` methods update both the board and the owner's `Player`, so callers must not also call `Player.addBuilding`, `removeBuilding` or `addRoad`, or the points and roads would be counted twice. They only check that the placement is consistent (they throw `IllegalArgumentException` otherwise), not the game rules, so call the `isValid...` methods first. Resource costs and turn checks are the use case's job.
 
 ### Entity 3: Tile
 **Instance variables**
@@ -435,9 +437,9 @@ The constructor `Edge(int id, Vertex vertex1, Vertex vertex2)` registers the edg
 
 **Methods**
 - getName()
-- addBuilding(Building building) (only updates the player's list; the board sets the vertex)
+- addBuilding(Building building) (only updates the player's list. Do not call it directly when placing: `Board.placeBuilding` and `Board.upgradeToCity` already do)
 - removeBuilding(Building building)
-- addRoad(Road road) (only updates the player's list; the board sets the edge)
+- addRoad(Road road) (only updates the player's list. Do not call it directly when placing: `Board.placeRoad` already does)
 - getResources()
 - getBuildings() (unmodifiable view)
 - getRoads() (unmodifiable view)
