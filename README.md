@@ -357,11 +357,13 @@ Post conditions:
 - List<Edge> edges
 
 **Methods**
-- getTile(int tileId)
-- getVertex(int vertexId)
-- getEdge(int edgeId)
-- getMatchingTiles(int diceTotal)
-- getTilesAdjacentTo(Vertex vertex)
+- Board(List<Tile> tiles, List<Vertex> vertices, List<Edge> edges) (normally built by `BoardFactory`)
+- getTiles(), getVertices(), getEdges() (unmodifiable lists)
+- getTile(int tileId) (throws `IllegalArgumentException` for an unknown id)
+- getVertex(int vertexId) (same)
+- getEdge(int edgeId) (same)
+- getMatchingTiles(int diceTotal) (tiles whose token equals the total; 7 matches none, and the desert never matches)
+- getTilesAdjacentTo(Vertex vertex) (the 1 to 3 tiles that have the vertex as a corner)
 - isValidSettlementLocation(Vertex vertex, Player player, boolean isSetup)
 - isValidRoadLocation(Edge edge, Player player, Vertex setupAnchor) (setupAnchor is the settlement just placed during setup; null otherwise)
 - placeBuilding(Vertex vertex, Building building)
@@ -370,6 +372,7 @@ Post conditions:
 
 ### Entity 3: Tile
 **Instance variables**
+- int id
 - TerrainType terrain
 - ResourceType resource (null for the desert)
 - int numberToken (none for the desert)
@@ -377,10 +380,15 @@ Post conditions:
 - List<Edge> edges
 
 **Methods**
+- Tile(int id, TerrainType terrain, int numberToken) (the resource is derived from the terrain; the token must be 2-12 except 7, or `Tile.NO_TOKEN` (0) for the desert; invalid combinations throw `IllegalArgumentException`)
+- resourceFor(TerrainType terrain) (static: FOREST→LUMBER, HILLS→BRICK, FIELDS→GRAIN, PASTURE→WOOL, MOUNTAINS→ORE, DESERT→null)
+- getId()
+- getTerrain()
 - getResourceType()
-- getNumberToken()
-- getVertices()
-- getEdges()
+- getNumberToken() (`Tile.NO_TOKEN` for the desert)
+- hasNumberToken()
+- getVertices() (unmodifiable view, the 6 corners in order)
+- getEdges() (unmodifiable view, the 6 sides; edge i joins corners i and i+1)
 
 ### Entity 4: Vertex
 **Instance variables**
@@ -534,7 +542,9 @@ The constructor is `protected` and rejects a null owner or location. `Settlement
 - No instance variables.
 
 **Methods**
-- createStandardBoard(Random random) (creates the 19 tiles, 54 vertices and 72 edges, wires up adjacency, and shuffles terrain and number tokens)
+- createStandardBoard(Random random) (static; creates the 19 tiles, 54 vertices and 72 edges, wires up adjacency, and shuffles terrain and number tokens)
+
+Terrain mix: 4 forest, 3 hills, 4 fields, 4 pasture, 3 mountains, 1 desert. Number tokens: 2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12, assigned randomly to the non-desert tiles with no adjacency restriction (for example 6 and 8 may touch). Ids are sequential from 0. The same seeded `Random` always gives the same board.
 
 ### Entity 16: BuildCost
 **Instance variables**
