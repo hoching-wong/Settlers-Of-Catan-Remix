@@ -339,16 +339,25 @@ Post conditions:
 - Player longestRoadHolder
 
 **Methods**
-- startGame()
-- startSetupPhase()
-- advanceSetup()
-- canRoll()
-- markRolled()
-- endTurn()
-- getPlayers()
-- getCurrentPlayer()
-- checkVictory()
-- getWinner()
+- Game(Board board, List<Player> players, WeatherData weather, Dice dice) (starts in the SETUP phase; throws for fewer than 2 or more than 4 players, a null player, or the same player listed twice. Player names are validated by the StartGame use case, not here)
+- startGame() (enters the setup phase, same as startSetupPhase(); throws `IllegalStateException` once setup has begun)
+- startSetupPhase() (puts the game at the start of setup, with Player 1 to place a settlement)
+- getSetupOrder() (the player of each placement turn in snake order, for example P1 P2 P2 P1)
+- setLastPlacedSettlement(Vertex vertex) (records the settlement just placed during setup; the vertex must hold the current player's building)
+- advanceSetup() (after a settlement, SETTLEMENT becomes ROAD; after a road, the next placement turn starts, or regular play begins with Player 1 after the last one. Throws if no settlement was recorded or the game is not in setup)
+- canRoll() (true only in the PLAYING phase and before the current player has rolled)
+- markRolled() (throws if canRoll() is false)
+- endTurn() (passes the turn to the next player; the current player must have rolled, otherwise it throws)
+- getPlayers() (unmodifiable)
+- getCurrentPlayer() (derived from currentPlayerIndex; during setup it is the player whose placement turn it is)
+- checkVictory() (returns true and ends the game, setting phase GAME_OVER and the winner, if a player has 10 or more points. The current player is checked first, then the others in turn order. Does nothing during setup)
+- getWinner() (null until the game is over)
+- updateLongestRoadHolder() (recalculates Longest Road with `LongestRoadCalculator`, moves the `hasLongestRoad` flag between players and returns the holder or null. Call it after a new road, or a settlement or city that may break an opponent's road, then call checkVictory())
+- getBoard(), getWeather(), getDice(), getPhase(), getCurrentPlayerIndex(), hasRolled(), getSetupStep() (null once setup is over), getSetupIndex() (placement turns completed), getLastPlacedSettlement(), getLongestRoadHolder()
+
+Constants: `Game.MIN_PLAYERS` (2), `Game.MAX_PLAYERS` (4), `Game.WINNING_POINTS` (10).
+
+Turn flow during setup: place the settlement with `Board.placeBuilding`, call `setLastPlacedSettlement`, call `advanceSetup()`, then check the road with `Board.isValidRoadLocation(edge, player, game.getLastPlacedSettlement())`, place it with `Board.placeRoad`, and call `advanceSetup()` again. No resources are given for setup placements. `Game` does not roll the dice: the roll-dice use case calls `getDice().roll()`, then `markRolled()`.
 
 ### Entity 2: Board
 **Instance variables**
