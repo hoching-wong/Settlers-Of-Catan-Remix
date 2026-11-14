@@ -246,7 +246,7 @@ Preconditions:
 Main path:
 1. The system continuously displays the status panel on the screen throughout the game
 2. The system reads and displays each player's current total victory points
-3. The system reads and displays the count of each resource type (e.g., Brick, Wood, Ore, Grain, Wool) in each player's inventory
+3. The system reads and displays the count of each resource type (e.g., Brick, Lumber, Ore, Grain, Wool) in each player's inventory
 4. The system displays the active weather conditions and any associated weather-based resource bonuses selected during game setup
 5. The system indicates which player is currently active
 6. The system updates the displayed points, resources, and turn indicator immediately whenever a game action changes any player's state
@@ -331,11 +331,21 @@ Post conditions:
 - GamePhase phase
 - WeatherData weather
 - int currentPlayerIndex
+- Dice dice
+- boolean hasRolled
+- SetupStep setupStep
+- int setupIndex
+- Vertex lastPlacedSettlement
+- Player longestRoadHolder
 
 **Methods**
 - startGame()
 - startSetupPhase()
+- advanceSetup()
+- canRoll()
+- markRolled()
 - endTurn()
+- getPlayers()
 - getCurrentPlayer()
 - checkVictory()
 - getWinner()
@@ -351,16 +361,18 @@ Post conditions:
 - getVertex(int vertexId)
 - getEdge(int edgeId)
 - getMatchingTiles(int diceTotal)
-- isValidSettlementLocation(Vertex vertex)
-- isValidRoadLocation(Edge edge)
+- getTilesAdjacentTo(Vertex vertex)
+- isValidSettlementLocation(Vertex vertex, Player player, boolean isSetup)
+- isValidRoadLocation(Edge edge, Player player, Vertex setupAnchor) (setupAnchor is the settlement just placed during setup; null otherwise)
 - placeBuilding(Vertex vertex, Building building)
+- upgradeToCity(Vertex vertex, City city)
 - placeRoad(Edge edge, Road road)
 
 ### Entity 3: Tile
 **Instance variables**
 - TerrainType terrain
-- ResourceType resource
-- int numberToken
+- ResourceType resource (null for the desert)
+- int numberToken (none for the desert)
 - List<Vertex> vertices
 - List<Edge> edges
 
@@ -402,13 +414,17 @@ Post conditions:
 - ResourceHand resources
 - List<Building> buildings
 - List<Road> roads
-- int victoryPoints
+- boolean hasLongestRoad
 
 **Methods**
 - addBuilding(Building building)
+- removeBuilding(Building building)
 - addRoad(Road road)
-- addVictoryPoints(int points)
-- getVictoryPoints()
+- getResources()
+- getBuildings()
+- getRoads()
+- setHasLongestRoad(boolean value)
+- getVictoryPoints() (computed: sum of building points, plus 2 if hasLongestRoad)
 
 ### Entity 7: ResourceHand
 **Instance variables**
@@ -425,9 +441,11 @@ Post conditions:
 ### Entity 8: Building (abstract class)
 **Instance variables**
 - Player owner
+- Vertex location
 
 **Methods**
 - getOwner()
+- getLocation()
 - getVictoryPoints() (abstract)
 
 ### Entity 9: Settlement (extends Building)
@@ -452,7 +470,8 @@ Post conditions:
 **Methods**
 - getOwner()
 - getLocation()
-- Supporting entities and value objects
+
+### Supporting entities and value objects
 
 ### Entity 12: WeatherData
 **Instance variables**
@@ -461,6 +480,8 @@ Post conditions:
 - int multiplier
 
 **Methods**
+- fromWmoCode(int code)
+- none() (no bonus; used when the API fails or the code has no category)
 - getCondition()
 - getBonusResource()
 - getMultiplier()
@@ -470,18 +491,60 @@ Post conditions:
 **Instance variables**
 - int die1
 - int die2
+- Random random
 
 **Methods**
+- Dice(Random random) (a seeded Random can be passed in for testing)
 - roll()
 - getDie1()
 - getDie2()
 - getTotal()
+
+### Entity 14: CityLocation
+**Instance variables**
+- String name
+- double latitude
+- double longitude
+
+**Methods**
+- defaults() (the predefined city list)
+- getName()
+- getLatitude()
+- getLongitude()
+
+### Entity 15: BoardFactory
+**Instance variables**
+- No instance variables.
+
+**Methods**
+- createStandardBoard(Random random) (creates the 19 tiles, 54 vertices and 72 edges, wires up adjacency, and shuffles terrain and number tokens)
+
+### Entity 16: BuildCost
+**Instance variables**
+- No instance variables.
+
+**Methods**
+- of(StructureType type) (returns the Map<ResourceType, Integer> cost)
+
+### Domain services
+These hold game rules that do not belong to a single entity. They have no state.
+
+### Service 1: ProductionCalculator
+**Methods**
+- distribute(Board board, int diceTotal, WeatherData weather) (returns the resources each player receives; settlement x1, city x2, weather multiplier on the bonus resource)
+
+### Service 2: LongestRoadCalculator
+**Methods**
+- longestRoadOf(Player player, Board board) (longest continuous road, not counting paths broken by another player's settlement or city)
+- findHolder(List<Player> players, Board board, Player currentHolder) (returns the player who should hold Longest Road, or null; minimum 5 segments, a tie keeps the current holder)
 
 **Enumerations**
 
 These are supporting types rather than regular entities.
 - **Enum:**    Values
 - **GamePhase:**    SETUP, PLAYING, GAME_OVER
+- **SetupStep:**    SETTLEMENT, ROAD
+- **StructureType:**    ROAD, SETTLEMENT, CITY
 - **ResourceType:**    LUMBER, BRICK, GRAIN, WOOL, ORE
 - **TerrainType:**    FOREST, HILLS, FIELDS, PASTURE, MOUNTAINS, DESERT
 - **WeatherType:**    SUNNY, CLOUDY, RAINY, SNOWY, STORMY, FOG
