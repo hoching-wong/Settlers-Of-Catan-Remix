@@ -560,7 +560,9 @@ These hold game rules that do not belong to a single entity. They have no state.
 
 ### Service 1: ProductionCalculator
 **Methods**
-- distribute(Board board, int diceTotal, WeatherData weather) (returns the resources each player receives; settlement x1, city x2, weather multiplier on the bonus resource)
+- distribute(Board board, int diceTotal, WeatherData weather) (static; returns the resources each player receives; settlement x1, city x2, weather multiplier on the bonus resource)
+
+`distribute` returns an unmodifiable `Map<Player, Map<ResourceType, Integer>>`. Players who receive nothing are not in the map, and a total of 7, no matching tile, or no adjacent building gives an empty map. The weather multiplier applies only to the bonus resource and only for tiles that were rolled. It does not change any player's hand: the roll-dice use case adds the result to each player's `ResourceHand`.
 
 ### Service 2: LongestRoadCalculator
 **Methods**
