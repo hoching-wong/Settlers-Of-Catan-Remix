@@ -22,7 +22,7 @@ A multiplayer strategy board game where players compete to build and expand thei
 ## Game Rules
 
 ### 1. Game Setup
-- The game supports 2–4 players playing locally on the same device
+-  The game supports 2–4 players playing locally on the same device
 - Each player enters a unique name before starting the game
 - Players select a city from a predefined list to determine the weather conditions for the game
 - After the game starts, players take turns placing their initial settlements and roads
