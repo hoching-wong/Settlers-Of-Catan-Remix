@@ -550,7 +550,7 @@ The constructor is `protected` and rejects a null owner or location. `Settlement
 
 ### Entity 15: BoardFactory
 **Instance variables**
-- No instance variables.
+- No instance variables
 
 **Methods**
 - createStandardBoard(Random random) (static; creates the 19 tiles, 54 vertices and 72 edges, wires up adjacency, and shuffles terrain and number tokens)
@@ -559,7 +559,7 @@ Terrain mix: 4 forest, 3 hills, 4 fields, 4 pasture, 3 mountains, 1 desert. Numb
 
 ### Entity 16: BuildCost
 **Instance variables**
-- No instance variables.
+- No instance variables
 
 **Methods**
 - of(StructureType type) (returns the Map<ResourceType, Integer> cost)
