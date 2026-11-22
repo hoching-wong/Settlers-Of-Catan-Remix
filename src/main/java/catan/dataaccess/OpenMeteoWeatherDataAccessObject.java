@@ -1,4 +1,4 @@
-package catan.data_access;
+package catan.dataaccess;
 
 import catan.entity.CityLocation;
 import catan.usecase.weather.WeatherDataAccessInterface;
@@ -17,6 +17,7 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherDataAccessInterf
 
   private static final String API_URL = "https://api.open-meteo.com/v1/forecast";
   private static final int TIMEOUT_SECONDS = 10;
+  private static final int SUCCESS_STATUS_CODE = 200;
 
   private final HttpClient client;
 
@@ -51,20 +52,36 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherDataAccessInterf
 
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-      if (response.statusCode() != 200) {
+      if (response.statusCode() != SUCCESS_STATUS_CODE) {
         return OptionalInt.empty();
       }
 
-      JSONObject json = new JSONObject(response.body());
-      int weatherCode = json.getJSONObject("current").getInt("weather_code");
+      return parseWeatherCode(response.body());
 
-      return OptionalInt.of(weatherCode);
-
-    } catch (IOException | JSONException | IllegalArgumentException exception) {
+    } catch (IOException | IllegalArgumentException exception) {
       return OptionalInt.empty();
 
     } catch (InterruptedException exception) {
       Thread.currentThread().interrupt();
+      return OptionalInt.empty();
+    }
+  }
+
+  /**
+   * Extracts the WMO weather code from a JSON response.
+   *
+   * @param responseBody the JSON response returned by the API
+   * @return the weather code, or an empty result if the response does not contain a valid weather
+   *     code
+   */
+  static OptionalInt parseWeatherCode(String responseBody) {
+    try {
+      JSONObject json = new JSONObject(responseBody);
+      int weatherCode = json.getJSONObject("current").getInt("weather_code");
+
+      return OptionalInt.of(weatherCode);
+
+    } catch (JSONException | IllegalArgumentException exception) {
       return OptionalInt.empty();
     }
   }
