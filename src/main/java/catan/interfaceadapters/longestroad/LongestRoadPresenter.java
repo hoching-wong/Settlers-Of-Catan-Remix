@@ -1,31 +1,42 @@
 package catan.interfaceadapters.longestroad;
 
+import catan.usecase.longestroad.LongestRoadOutputBoundary;
+import catan.usecase.longestroad.LongestRoadOutputData;
 import java.util.Objects;
 
-/**
- * Prepares Longest Road information for the view.
- */
-public class LongestRoadPresenter {
+/** Prepares Longest Road information for the view. */
+public class LongestRoadPresenter implements LongestRoadOutputBoundary {
 
-    private final LongestRoadViewModel viewModel;
+  private final LongestRoadViewModel viewModel;
 
-    /**
-     * Constructs a presenter with its view model.
-     *
-     * @param viewModel the Longest Road view model
-     */
-    public LongestRoadPresenter(LongestRoadViewModel viewModel) {
-        this.viewModel = Objects.requireNonNull(viewModel);
-    }
+  /**
+   * Constructs a presenter with its view model.
+   *
+   * @param viewModel the Longest Road view model
+   */
+  public LongestRoadPresenter(LongestRoadViewModel viewModel) {
+    this.viewModel = Objects.requireNonNull(viewModel);
+  }
 
-    /**
-     * Presents the current Longest Road holder.
-     *
-     * @param holderName the holder's name, or null if nobody qualifies
-     * @param roadLength the holder's longest road length
-     */
-    public void present(String holderName, int roadLength) {
-        viewModel.updateState(holderName, roadLength);
-    }
+  /**
+   * Presents the Longest Road result.
+   *
+   * @param outputData the result to display
+   */
+  @Override
+  public void present(LongestRoadOutputData outputData) {
+    Objects.requireNonNull(outputData);
+
+    viewModel.updateState(outputData.holderName(), outputData.roadLength());
+  }
+
+  /**
+   * Presents Longest Road information using individual values.
+   *
+   * @param holderName the holder's name, or null
+   * @param roadLength the holder's road length
+   */
+  public void present(String holderName, int roadLength) {
+    present(new LongestRoadOutputData(holderName, roadLength));
+  }
 }
-
