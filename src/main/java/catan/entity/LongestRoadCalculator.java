@@ -1,124 +1,151 @@
 package catan.entity;
 
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** Works out the Longest Road. Stateless: it never changes a player or the board. */
-public class LongestRoadCalculator {
-    /** The fewest continuous segments that qualify for Longest Road. */
+/**
+ * Calculates the longest continuous road and determines its holder.
+ */
+public final class LongestRoadCalculator {
+
+    /** Minimum number of roads required for the Longest Road title. */
     public static final int MIN_ROAD_LENGTH = 5;
 
     /**
-     * The longest continuous road of the player: the most of their roads that can be walked
-     * in one path without using any road twice. Paths may branch off and loop back through a
-     * vertex, but cannot pass through a vertex that holds another player's settlement or city.
-     * A path may still start or end at such a vertex. The player's own buildings never break
-     * a road.
+     * Prevents creating an instance of this utility class.
      */
-    public static int longestRoadOf(Player player, Board board) {
-        Objects.requireNonNull(player, "player");
-        Objects.requireNonNull(board, "board");
-
-        int total = 0;
-        Set<Vertex> starts = new LinkedHashSet<>();
-        for (Edge edge : board.getEdges()) {
-            if (ownsRoad(edge, player)) {
-                total++;
-                starts.add(edge.getVertex1());
-                starts.add(edge.getVertex2());
-            }
-        }
-        Search search = new Search(player, total);
-        for (Vertex start : starts) {
-            search.from(start, 0);
-            if (search.best == total) {
-                break;
-            }
-        }
-        return search.best;
+    private LongestRoadCalculator() {
     }
 
     /**
-     * The player who should hold Longest Road, or null if nobody should.
+     * Calculates a player's longest continuous road.
      *
-     * <ul>
-     *   <li>The holder needs at least {@link #MIN_ROAD_LENGTH} segments.
-     *   <li>The longest road wins. A tie with the current holder keeps the holder.
-     *   <li>If the current holder no longer qualifies or is beaten, the title goes to the
-     *       single player with the longest road, or to nobody if several other players tie.
-     * </ul>
+     * @param player the player whose roads are being checked
+     * @param board the game board
+     * @return the number of roads in the longest continuous path
      */
-    public static Player findHolder(List<Player> players, Board board, Player currentHolder) {
-        Objects.requireNonNull(players, "players");
-        Objects.requireNonNull(board, "board");
+    public static int longestRoadOf(Player player, Board board) {
+        Objects.requireNonNull(player);
+        Objects.requireNonNull(board);
 
         int longest = 0;
+
+        for (Edge edge : board.getEdges()) {
+            if (ownsRoad(edge, player)) {
+                int fromFirst = dfs(
+                        player, edge.getVertex1(), new HashSet<>());
+
+                int fromSecond = dfs(
+                        player, edge.getVertex2(), new HashSet<>());
+
+                longest = Math.max(
+                        longest, Math.max(fromFirst, fromSecond));
+            }
+        }
+
+        return longest;
+    }
+
+    /**
+     * Determines which player should hold the Longest Road title.
+     *
+     * @param players the players in the game
+     * @param board the game board
+     * @param currentHolder the current holder, or null
+     * @return the eligible holder, or null if no player qualifies
+     */
+    public static Player findHolder(
+            List<Player> players, Board board, Player currentHolder) {
+
+        Objects.requireNonNull(players);
+        Objects.requireNonNull(board);
+
+        int longest = 0;
+        int currentHolderLength = 0;
         Player leader = null;
         boolean tied = false;
-        int holderLength = 0;
-        for (Player p : players) {
-            int length = longestRoadOf(p, board);
-            if (p == currentHolder) {
-                holderLength = length;
+
+        for (Player player : players) {
+            int length = longestRoadOf(player, board);
+
+            if (player == currentHolder) {
+                currentHolderLength = length;
             }
+
             if (length > longest) {
                 longest = length;
-                leader = p;
+                leader = player;
                 tied = false;
             } else if (length == longest && length > 0) {
                 tied = true;
             }
         }
+
         if (longest < MIN_ROAD_LENGTH) {
             return null;
         }
-        if (currentHolder != null && holderLength == longest) {
+
+        if (currentHolder != null && currentHolderLength == longest) {
             return currentHolder;
         }
-        return tied ? null : leader;
+
+        if (tied) {
+            return null;
+        }
+
+        return leader;
     }
 
+    /**
+     * Checks whether an edge contains the player's road.
+     *
+     * @param edge the edge to check
+     * @param player the player
+     * @return true if the road belongs to the player
+     */
     private static boolean ownsRoad(Edge edge, Player player) {
-        return edge.isOccupied() && edge.getRoad().getOwner() == player;
+        return edge.isOccupied()
+                && edge.getRoad().getOwner() == player;
     }
 
-    /** Depth-first search over the player's roads, using each road at most once per path. */
-    private static final class Search {
-        private final Player player;
-        private final int totalRoads;
-        private final Set<Edge> used = new HashSet<>();
-        int best;
+    /**
+     * Finds the longest path starting from a vertex.
+     *
+     * @param player the player
+     * @param current the current vertex
+     * @param usedRoads the roads already used in this path
+     * @return the maximum number of additional roads
+     */
+    private static int dfs(
+            Player player, Vertex current, Set<Edge> usedRoads) {
 
-        Search(Player player, int totalRoads) {
-            this.player = player;
-            this.totalRoads = totalRoads;
+        if (!usedRoads.isEmpty()
+                && current.isOccupied()
+                && current.getBuilding().getOwner() != player) {
+            return 0;
         }
 
-        private boolean blocks(Vertex vertex) {
-            return vertex.isOccupied() && vertex.getBuilding().getOwner() != player;
-        }
+        int longest = 0;
 
-        void from(Vertex vertex, int length) {
-            best = Math.max(best, length);
-            for (Edge edge : vertex.getAdjacentEdges()) {
-                if (best == totalRoads) {
-                    return; // every road is already in one path, nothing can beat it
-                }
-                if (!ownsRoad(edge, player) || used.contains(edge)) {
-                    continue;
-                }
-                used.add(edge);
-                Vertex next = edge.getOtherVertex(vertex);
-                if (blocks(next)) {
-                    best = Math.max(best, length + 1); // the path ends at the blocked vertex
-                } else {
-                    from(next, length + 1);
-                }
-                used.remove(edge);
+        for (Edge edge : current.getAdjacentEdges()) {
+            if (!ownsRoad(edge, player)
+                    || usedRoads.contains(edge)) {
+                continue;
             }
+
+            usedRoads.add(edge);
+
+            Vertex next = edge.getOtherVertex(current);
+
+            int length = 1 + dfs(player, next, usedRoads);
+
+            longest = Math.max(longest, length);
+
+            usedRoads.remove(edge);
         }
+
+        return longest;
     }
 }
