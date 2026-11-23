@@ -74,7 +74,6 @@ class AppBuilderTest {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     private void startAGame(String city, String... names) {
         find(app, "playerCount", JComboBox.class).setSelectedItem(names.length);
         for (int i = 0; i < names.length; i++) {
