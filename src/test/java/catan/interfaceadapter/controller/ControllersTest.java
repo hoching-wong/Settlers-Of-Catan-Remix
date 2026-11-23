@@ -8,7 +8,6 @@ import catan.usecase.placeinitial.PlaceInitialInputBoundary;
 import catan.usecase.placeinitial.PlaceInitialInputData;
 import catan.usecase.restartgame.RestartGameInputBoundary;
 import catan.usecase.restartgame.RestartGameInputData;
-import catan.usecase.restartgame.RestartGameInputData.Choice;
 import catan.usecase.startgame.StartGameInputBoundary;
 import catan.usecase.startgame.StartGameInputData;
 import java.util.ArrayList;
@@ -60,16 +59,13 @@ class ControllersTest {
     }
 
     @Test
-    void restartControllerSendsTheButtonPressed() {
+    void restartControllerCallsTheUseCase() {
         List<RestartGameInputData> received = new ArrayList<>();
         RestartGameInputBoundary boundary = received::add;
-        RestartGameController controller = new RestartGameController(boundary);
 
-        controller.newGame();
-        controller.exit();
+        new RestartGameController(boundary).returnToMenu();
 
-        assertEquals(List.of(new RestartGameInputData(Choice.NEW_GAME), new RestartGameInputData(Choice.EXIT)),
-                received);
+        assertEquals(List.of(new RestartGameInputData()), received);
     }
 
     @Test

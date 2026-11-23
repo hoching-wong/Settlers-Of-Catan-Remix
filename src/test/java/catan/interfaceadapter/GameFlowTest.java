@@ -159,7 +159,7 @@ class GameFlowTest {
         assertEquals("The game is over.", gameView.getErrorMessage());
 
         // --- back to the menu, and a second game works ---
-        restart.newGame();
+        restart.returnToMenu();
         assertEquals(Screen.START_MENU, viewManager.getActiveScreen());
         assertNull(repository.get());
         assertTrue(gameView.getPlayerNames().isEmpty());
@@ -182,29 +182,10 @@ class GameFlowTest {
     }
 
     @Test
-    void exitFromTheVictoryScreenAlsoReturnsToTheMenu() {
-        startGame.startGame(List.of("Ann", "Bob"), "Toronto");
-        while (game().getPhase() == GamePhase.SETUP) {
-            clickFirstValidSettlement();
-            clickFirstFreeRoad();
-        }
-        Player p = game().getCurrentPlayer();
-        for (int i = 0; i < 4; i++) {
-            p.addBuilding(new City(p, new Vertex(3000 + i)));
-        }
-        assertTrue(game().checkVictory());
-        gameOverPresenter.presentGameOver(GameResult.from(game()));
-
-        restart.exit();
-        assertEquals(Screen.START_MENU, viewManager.getActiveScreen());
-        assertNull(repository.get());
-    }
-
-    @Test
-    void theRestartButtonsDoNothingWhileAGameIsStillOn() {
+    void returningToTheMenuDoesNothingWhileAGameIsStillOn() {
         startGame.startGame(List.of("Ann", "Bob"), "Toronto");
         Game before = game();
-        restart.newGame();
+        restart.returnToMenu();
         assertEquals("The game is not over yet.", gameOverView.getErrorMessage());
         assertSame(before, game());
         assertEquals(Screen.GAME, viewManager.getActiveScreen());
