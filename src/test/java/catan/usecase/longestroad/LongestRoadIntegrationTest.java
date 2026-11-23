@@ -140,7 +140,7 @@ class LongestRoadIntegrationTest {
 
   @Test
   void noRoadsShowsNoHolder() throws Exception {
-    LongestRoadPanel panel = createPanel();
+    final LongestRoadPanel panel = createPanel();
 
     controller.execute();
     flushSwingEvents();
@@ -158,7 +158,7 @@ class LongestRoadIntegrationTest {
 
   @Test
   void fiveRoadsUpdatesGameAndGui() throws Exception {
-    LongestRoadPanel panel = createPanel();
+    final LongestRoadPanel panel = createPanel();
 
     addRoads(alice, 0, 5);
 
@@ -186,7 +186,7 @@ class LongestRoadIntegrationTest {
   void longerRoadTransfersBonusAndUpdatesGui()
           throws Exception {
 
-    LongestRoadPanel panel = createPanel();
+    final LongestRoadPanel panel = createPanel();
 
     addRoads(alice, 0, 5);
 

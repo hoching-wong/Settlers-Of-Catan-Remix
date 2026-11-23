@@ -125,7 +125,7 @@ class LongestRoadPanelTest {
   void clearingViewModelClearsPanel() throws Exception {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
 
-    LongestRoadPanel panel = new LongestRoadPanel(viewModel);
+    final LongestRoadPanel panel = new LongestRoadPanel(viewModel);
 
     viewModel.updateState("Alice", 6);
     flushSwingEvents();
