@@ -1,7 +1,5 @@
 package catan.usecase.restartgame;
 
-/**
- * @param choice the button that was pressed, so the view can also close the window for EXIT
- */
-public record RestartGameOutputData(RestartGameInputData.Choice choice) {
+/** The finished game was cleared. There is nothing more to report: the view shows the start menu. */
+public record RestartGameOutputData() {
 }
