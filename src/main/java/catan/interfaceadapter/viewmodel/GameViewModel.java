@@ -10,7 +10,10 @@ public class GameViewModel extends ViewModel {
     public static final String TURN = "turn";
     public static final String MESSAGE = "message";
     public static final String ERROR = "error";
+    public static final String WEATHER = "weather";
 
+    private String weatherText = "";
+    private String bonusText = "";
     private List<String> playerNames = List.of();
     private String currentPlayerName = "";
     private String instruction = "";
@@ -39,6 +42,22 @@ public class GameViewModel extends ViewModel {
     /** The reason the last action was refused, or an empty string. */
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    /** The weather of the game, for example "Weather in Toronto: Sunny". Fixed for the whole game. */
+    public String getWeatherText() {
+        return weatherText;
+    }
+
+    /** The resource bonus the weather gives, for example "Bonus: Lumber x2". */
+    public String getBonusText() {
+        return bonusText;
+    }
+
+    public void setWeather(String weatherText, String bonusText) {
+        this.weatherText = weatherText;
+        this.bonusText = bonusText;
+        firePropertyChanged(WEATHER, weatherText);
     }
 
     /** A new game has begun. */
@@ -75,9 +94,12 @@ public class GameViewModel extends ViewModel {
         instruction = "";
         message = "";
         errorMessage = "";
+        weatherText = "";
+        bonusText = "";
         firePropertyChanged(PLAYERS, playerNames);
         firePropertyChanged(TURN, currentPlayerName);
         firePropertyChanged(MESSAGE, message);
         firePropertyChanged(ERROR, errorMessage);
+        firePropertyChanged(WEATHER, weatherText);
     }
 }
