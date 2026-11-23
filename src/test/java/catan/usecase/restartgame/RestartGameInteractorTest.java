@@ -10,7 +10,6 @@ import catan.entity.Player;
 import catan.entity.Vertex;
 import catan.entity.WeatherData;
 import catan.usecase.port.GameRepository;
-import catan.usecase.restartgame.RestartGameInputData.Choice;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -92,38 +91,28 @@ class RestartGameInteractorTest {
         return game;
     }
 
-    private void restart(Choice choice) {
-        interactor.restartGame(new RestartGameInputData(choice));
+    private void restart() {
+        interactor.restartGame(new RestartGameInputData());
     }
 
     // ---- success ----
 
     @Test
-    void newGameClearsTheFinishedGameAndReturnsToTheMenu() {
+    void clearsTheFinishedGameAndReturnsToTheMenu() {
         finishedGame();
-        restart(Choice.NEW_GAME);
+        restart();
 
         assertTrue(presenter.errors.isEmpty());
         assertNull(repository.get());
         assertEquals(1, repository.clears);
-        assertEquals(List.of(new RestartGameOutputData(Choice.NEW_GAME)), presenter.menus);
-    }
-
-    @Test
-    void exitAlsoClearsTheGameAndReportsTheChoice() {
-        finishedGame();
-        restart(Choice.EXIT);
-
-        assertNull(repository.get());
-        assertEquals(List.of(new RestartGameOutputData(Choice.EXIT)), presenter.menus);
-        assertTrue(presenter.errors.isEmpty());
+        assertEquals(List.of(new RestartGameOutputData()), presenter.menus);
     }
 
     @Test
     void theResultIsStillAvailableBeforeLeaving() {
         Game game = finishedGame();
         GameResult result = GameResult.from(game);
-        restart(Choice.NEW_GAME);
+        restart();
         assertEquals(game.getWinner().getName(), result.winnerName());
         assertEquals(2, result.scores().size());
     }
@@ -132,7 +121,7 @@ class RestartGameInteractorTest {
 
     @Test
     void noGameToLeave() {
-        restart(Choice.NEW_GAME);
+        restart();
         assertEquals(List.of("No game is in progress."), presenter.errors);
         assertTrue(presenter.menus.isEmpty());
         assertEquals(0, repository.clears);
@@ -141,8 +130,8 @@ class RestartGameInteractorTest {
     @Test
     void aGameStillInProgressIsKept() {
         Game game = newGame();
-        restart(Choice.NEW_GAME);
-        restart(Choice.EXIT);
+        restart();
+        restart();
 
         assertEquals(List.of("The game is not over yet.", "The game is not over yet."), presenter.errors);
         assertTrue(presenter.menus.isEmpty());
@@ -153,8 +142,8 @@ class RestartGameInteractorTest {
     @Test
     void leavingTwiceOnlyWorksOnce() {
         finishedGame();
-        restart(Choice.NEW_GAME);
-        restart(Choice.NEW_GAME);
+        restart();
+        restart();
         assertEquals(1, presenter.menus.size());
         assertEquals(List.of("No game is in progress."), presenter.errors);
         assertEquals(1, repository.clears);
@@ -167,6 +156,5 @@ class RestartGameInteractorTest {
         assertThrows(NullPointerException.class, () -> new RestartGameInteractor(null, presenter));
         assertThrows(NullPointerException.class, () -> new RestartGameInteractor(repository, null));
         assertThrows(NullPointerException.class, () -> interactor.restartGame(null));
-        assertThrows(NullPointerException.class, () -> new RestartGameInputData(null));
     }
 }
