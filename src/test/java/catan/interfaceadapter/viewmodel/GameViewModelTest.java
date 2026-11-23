@@ -86,7 +86,27 @@ class GameViewModelTest {
         assertEquals("", viewModel.getMessage());
         assertEquals("", viewModel.getErrorMessage());
         assertEquals(List.of(GameViewModel.PLAYERS, GameViewModel.TURN, GameViewModel.MESSAGE,
-                GameViewModel.ERROR), events);
+                GameViewModel.ERROR, GameViewModel.WEATHER), events);
+    }
+
+    @Test
+    void weatherIsStoredAndTellsTheView() {
+        assertEquals("", viewModel.getWeatherText());
+        assertEquals("", viewModel.getBonusText());
+        viewModel.setWeather("Weather in Toronto: Sunny", "Bonus: Lumber x2");
+        assertEquals("Weather in Toronto: Sunny", viewModel.getWeatherText());
+        assertEquals("Bonus: Lumber x2", viewModel.getBonusText());
+        assertEquals(List.of(GameViewModel.WEATHER), events);
+    }
+
+    @Test
+    void resetForgetsTheWeather() {
+        viewModel.setWeather("w", "b");
+        events.clear();
+        viewModel.reset();
+        assertEquals("", viewModel.getWeatherText());
+        assertEquals("", viewModel.getBonusText());
+        assertTrue(events.contains(GameViewModel.WEATHER));
     }
 
     @Test

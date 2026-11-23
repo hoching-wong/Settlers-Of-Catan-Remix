@@ -33,6 +33,8 @@ class StartGamePresenterTest {
         assertEquals("Ann", game.getCurrentPlayerName());
         assertEquals("Place a settlement", game.getInstruction());
         assertEquals(Screen.GAME, viewManager.getActiveScreen());
+        assertEquals("Weather in Toronto: Sunny", game.getWeatherText());
+        assertEquals("Bonus: Lumber x2", game.getBonusText());
     }
 
     @Test

@@ -69,7 +69,6 @@ class StartMenuFlowTest {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void fill(String city, String... names) {
         find(view, "playerCount", JComboBox.class).setSelectedItem(names.length);
         for (int i = 0; i < names.length; i++) {

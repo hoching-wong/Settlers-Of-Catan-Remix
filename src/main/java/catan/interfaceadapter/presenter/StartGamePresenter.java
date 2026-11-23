@@ -20,8 +20,11 @@ public class StartGamePresenter implements StartGameOutputBoundary {
 
     @Override
     public void presentGameStarted(StartGameOutputData out) {
-        startMenu.setGameStarted(out.playerNames(), out.cityName(), weatherText(out), bonusText(out));
+        String weatherText = weatherText(out);
+        String bonusText = bonusText(out);
+        startMenu.setGameStarted(out.playerNames(), out.cityName(), weatherText, bonusText);
         game.startGame(out.playerNames(), out.playerNames().get(0), Text.PLACE_SETTLEMENT);
+        game.setWeather(weatherText, bonusText);
         viewManager.setActiveScreen(ViewManagerModel.Screen.GAME);
     }
 
