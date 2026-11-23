@@ -8,7 +8,6 @@ import catan.interfaceadapter.controller.RestartGameController;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.ScoreEntry;
 import catan.usecase.restartgame.RestartGameInputData;
-import catan.usecase.restartgame.RestartGameInputData.Choice;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
@@ -25,11 +24,10 @@ class GameOverViewTest {
     }
 
     @Test
-    void startsBlankWithBothButtons() {
+    void startsBlankWithTheBackToMenuButton() {
         assertEquals(" ", text("winner"));
         assertNull(find(view, "score0", JLabel.class));
-        assertEquals("New Game", find(view, "newGame", JButton.class).getText());
-        assertEquals("Exit to Main Menu", find(view, "exit", JButton.class).getText());
+        assertEquals("Back to Main Menu", find(view, "backToMenu", JButton.class).getText());
     }
 
     @Test
@@ -59,15 +57,9 @@ class GameOverViewTest {
     }
 
     @Test
-    void newGameButtonSendsNewGame() {
-        find(view, "newGame", JButton.class).doClick();
-        assertEquals(List.of(new RestartGameInputData(Choice.NEW_GAME)), clicks);
-    }
-
-    @Test
-    void exitButtonSendsExit() {
-        find(view, "exit", JButton.class).doClick();
-        assertEquals(List.of(new RestartGameInputData(Choice.EXIT)), clicks);
+    void backToMenuButtonCallsTheController() {
+        find(view, "backToMenu", JButton.class).doClick();
+        assertEquals(List.of(new RestartGameInputData()), clicks);
     }
 
     @Test

@@ -102,7 +102,7 @@ class AppBuilderTest {
     void opensOnTheStartMenu() {
         assertTrue(isVisibleChain(find(app, "start", JButton.class)));
         assertFalse(isVisibleChain(find(app, "endTurn", JButton.class)));
-        assertFalse(isVisibleChain(find(app, "newGame", JButton.class)));
+        assertFalse(isVisibleChain(find(app, "backToMenu", JButton.class)));
     }
 
     @Test
@@ -201,12 +201,12 @@ class AppBuilderTest {
         builder.getGameOverPresenter().presentGameOver(GameResult.from(game));
         flush();
 
-        assertTrue(isVisibleChain(find(app, "newGame", JButton.class)));
+        assertTrue(isVisibleChain(find(app, "backToMenu", JButton.class)));
         assertEquals("Winner: Ann", label("winner"));
         assertEquals("Ann: 10 points  (winner)", label("score0"));
         assertEquals("Bob: 2 points", label("score1"));
 
-        click("newGame");
+        click("backToMenu");
         assertTrue(isVisibleChain(find(app, "start", JButton.class)));
         assertNull(repository.get());
         assertEquals("", find(app, "name1", JTextField.class).getText());
@@ -214,24 +214,6 @@ class AppBuilderTest {
         startAGame("Tokyo", "Cat", "Dan", "Eve");
         assertEquals("Current turn: Cat", label("turn"));
         assertEquals(3, repository.get().getPlayers().size());
-    }
-
-    @Test
-    void exitButtonAlsoReturnsToTheMenu() {
-        startAGame("London", "Ann", "Bob");
-        Game game = repository.get();
-        finishSetup(game);
-        Player winner = game.getCurrentPlayer();
-        for (int i = 0; i < 4; i++) {
-            winner.addBuilding(new City(winner, new Vertex(5000 + i)));
-        }
-        assertTrue(game.checkVictory());
-        builder.getGameOverPresenter().presentGameOver(GameResult.from(game));
-        flush();
-
-        click("exit");
-        assertTrue(isVisibleChain(find(app, "start", JButton.class)));
-        assertNull(repository.get());
     }
 
     @Test

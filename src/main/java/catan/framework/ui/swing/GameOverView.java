@@ -27,8 +27,7 @@ public class GameOverView extends JPanel implements PropertyChangeListener {
     private final JLabel winnerLabel = new JLabel(" ", SwingConstants.CENTER);
     private final JPanel scoresPanel = new JPanel();
     private final JLabel errorLabel = new JLabel(" ", SwingConstants.CENTER);
-    private final JButton newGameButton = new JButton("New Game");
-    private final JButton exitButton = new JButton("Exit to Main Menu");
+    private final JButton backToMenuButton = new JButton("Back to Main Menu");
 
     public GameOverView(GameOverViewModel viewModel, RestartGameController controller) {
         this.viewModel = Objects.requireNonNull(viewModel, "viewModel");
@@ -47,13 +46,10 @@ public class GameOverView extends JPanel implements PropertyChangeListener {
 
         errorLabel.setName("gameOverError");
         errorLabel.setForeground(new Color(0xB00020));
-        newGameButton.setName("newGame");
-        newGameButton.addActionListener(e -> controller.newGame());
-        exitButton.setName("exit");
-        exitButton.addActionListener(e -> controller.exit());
+        backToMenuButton.setName("backToMenu");
+        backToMenuButton.addActionListener(e -> controller.returnToMenu());
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 0));
-        buttons.add(newGameButton);
-        buttons.add(exitButton);
+        buttons.add(backToMenuButton);
 
         GridBagConstraints c = new GridBagConstraints();
         c.gridx = 0;
