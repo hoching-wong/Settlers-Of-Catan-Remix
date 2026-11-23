@@ -1,0 +1,199 @@
+package usecase.build;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import entity.Board;
+import entity.Building;
+import entity.City;
+import entity.Game;
+import entity.GamePhase;
+import entity.Player;
+import entity.ResourceType;
+import entity.Settlement;
+import entity.StructureType;
+import entity.Vertex;
+import usecase.FakeGameRepository;
+import usecase.TestGames;
+import usecase.boardstate.BoardSnapshot;
+import usecase.build.placement.PlacementStrategies;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
+class BuildInteractorTest {
+    private final FakeGameRepository repo = new FakeGameRepository();
+    private final Recorder presenter = new Recorder();
+    private final BuildInteractor interactor = new BuildInteractor(repo, presenter);
+    private final PlacementStrategies placements = PlacementStrategies.standard();
+
+    private static class Recorder implements BuildOutputBoundary {
+        BuildOutputData success;
+        String error;
+
+        @Override
+        public void prepareSuccessView(BuildOutputData outputData) {
+            success = outputData;
+            error = null;
+        }
+
+        @Override
+        public void prepareFailView(String errorMessage) {
+            error = errorMessage;
+            success = null;
+        }
+    }
+
+    /** A game in regular play where Ann has rolled and holds 5 of every resource. */
+    private Game readyGame() {
+        Game game = TestGames.playingGame(4, "Ann", "Bob");
+        game.markRolled();
+        TestGames.give(game.getCurrentPlayer(), 5);
+        repo.game = game;
+        return game;
+    }
+
+    private int firstValid(Game game, StructureType type) {
+        return placements.get(type).validLocations(game.getBoard(), game.getCurrentPlayer()).get(0);
+    }
+
+    @Test
+    void noGameFails() {
+        interactor.execute(new BuildInputData(StructureType.ROAD, 0));
+        assertEquals("No game is in progress.", presenter.error);
+    }
+
+    @Test
+    void mustRollFirst() {
+        Game game = TestGames.playingGame(4, "Ann", "Bob");
+        TestGames.give(game.getCurrentPlayer(), 5);
+        repo.game = game;
+        interactor.execute(new BuildInputData(StructureType.ROAD, firstValid(game, StructureType.ROAD)));
+        assertEquals("Roll the dice before building.", presenter.error);
+    }
+
+    @Test
+    void buildsARoadAndPays() {
+        Game game = readyGame();
+        Player ann = game.getCurrentPlayer();
+        int edge = firstValid(game, StructureType.ROAD);
+        interactor.execute(new BuildInputData(StructureType.ROAD, edge));
+
+        assertNull(presenter.error);
+        assertTrue(game.getBoard().getEdge(edge).isOccupied());
+        assertSame(ann, game.getBoard().getEdge(edge).getRoad().getOwner());
+        assertEquals(3, ann.getRoads().size());
+        assertEquals(4, ann.getResources().getResourceCount(ResourceType.LUMBER));
+        assertEquals(4, ann.getResources().getResourceCount(ResourceType.BRICK));
+        assertEquals(5, ann.getResources().getResourceCount(ResourceType.ORE));
+        assertEquals("ROAD", presenter.success.structure());
+        assertEquals("Ann", presenter.success.playerName());
+        assertEquals(4, presenter.success.resources().get("LUMBER"));
+        assertEquals(0, presenter.success.board().edges().get(edge).ownerIndex());
+        assertEquals(1, repo.gameSaves);
+    }
+
+    @Test
+    void invalidLocationIsRejectedAndNothingIsSpent() {
+        Game game = readyGame();
+        Player ann = game.getCurrentPlayer();
+        // an edge far from Ann's network: one that is not valid
+        List<Integer> valid = placements.get(StructureType.ROAD).validLocations(game.getBoard(), ann);
+        int invalid = 0;
+        while (valid.contains(invalid) || game.getBoard().getEdge(invalid).isOccupied()) {
+            invalid++;
+        }
+        interactor.execute(new BuildInputData(StructureType.ROAD, invalid));
+        assertTrue(presenter.error.startsWith("A road must go on an empty edge"));
+        assertEquals(5, ann.getResources().getResourceCount(ResourceType.LUMBER));
+        assertFalse(game.getBoard().getEdge(invalid).isOccupied());
+    }
+
+    @Test
+    void outOfRangeIdIsJustInvalid() {
+        readyGame();
+        interactor.execute(new BuildInputData(StructureType.SETTLEMENT, 999));
+        assertTrue(presenter.error.startsWith("A settlement must go"));
+        interactor.execute(new BuildInputData(StructureType.ROAD, -5));
+        assertTrue(presenter.error.startsWith("A road must go"));
+    }
+
+    @Test
+    void cannotAfford() {
+        Game game = TestGames.playingGame(4, "Ann", "Bob");
+        game.markRolled();
+        repo.game = game;
+        interactor.execute(new BuildInputData(StructureType.SETTLEMENT, 0));
+        assertEquals("Not enough resources. A settlement costs 1 lumber, 1 brick, 1 grain, 1 wool.", presenter.error);
+    }
+
+    @Test
+    void settlementAfterExtendingTheRoad() {
+        Game game = readyGame();
+        Player ann = game.getCurrentPlayer();
+        // build roads until a settlement spot opens up
+        while (placements.get(StructureType.SETTLEMENT).validLocations(game.getBoard(), ann).isEmpty()) {
+            interactor.execute(new BuildInputData(StructureType.ROAD, firstValid(game, StructureType.ROAD)));
+            assertNull(presenter.error);
+        }
+        int vertex = firstValid(game, StructureType.SETTLEMENT);
+        int pointsBefore = ann.getVictoryPoints();
+        interactor.execute(new BuildInputData(StructureType.SETTLEMENT, vertex));
+        assertNull(presenter.error);
+        assertTrue(game.getBoard().getVertex(vertex).getBuilding() instanceof Settlement);
+        assertEquals(pointsBefore + 1, presenter.success.victoryPoints());
+        assertEquals(BoardSnapshot.SETTLEMENT, presenter.success.board().vertices().get(vertex).building());
+    }
+
+    @Test
+    void cityUpgradesOwnSettlement() {
+        Game game = readyGame();
+        Player ann = game.getCurrentPlayer();
+        Vertex own = ann.getBuildings().get(0).getLocation();
+        interactor.execute(new BuildInputData(StructureType.CITY, own.getId()));
+        assertNull(presenter.error);
+        assertTrue(own.getBuilding() instanceof City);
+        assertEquals(3, ann.getVictoryPoints());
+        assertEquals(3, ann.getResources().getResourceCount(ResourceType.GRAIN));
+        assertEquals(2, ann.getResources().getResourceCount(ResourceType.ORE));
+        assertEquals(BoardSnapshot.CITY, presenter.success.board().vertices().get(own.getId()).building());
+    }
+
+    @Test
+    void cityOnOpponentOrEmptyVertexIsRejected() {
+        Game game = readyGame();
+        Player bob = game.getPlayers().get(1);
+        int bobs = bob.getBuildings().get(0).getLocation().getId();
+        interactor.execute(new BuildInputData(StructureType.CITY, bobs));
+        assertEquals("A city can only be built by upgrading one of your own settlements.", presenter.error);
+        int empty = 0;
+        while (game.getBoard().getVertex(empty).isOccupied()) {
+            empty++;
+        }
+        interactor.execute(new BuildInputData(StructureType.CITY, empty));
+        assertNotNull(presenter.error);
+    }
+
+    @Test
+    void reachingTenPointsEndsTheGame() {
+        Game game = readyGame();
+        Player ann = game.getCurrentPlayer();
+        Board board = game.getBoard();
+        // give Ann extra settlements far from everything until she has 9 points
+        for (Vertex v : board.getVertices()) {
+            if (ann.getVictoryPoints() >= 9) {
+                break;
+            }
+            if (board.isValidSettlementLocation(v, ann, true)) {
+                board.placeBuilding(v, new Settlement(ann, v));
+            }
+        }
+        assertEquals(9, ann.getVictoryPoints());
+        Building settlement = ann.getBuildings().get(0);
+        interactor.execute(new BuildInputData(StructureType.CITY, settlement.getLocation().getId()));
+        assertTrue(presenter.success.gameOver());
+        assertEquals("Ann", presenter.success.winnerName());
+        assertEquals(GamePhase.GAME_OVER, game.getPhase());
+
+        interactor.execute(new BuildInputData(StructureType.ROAD, 0));
+        assertEquals("The game is over.", presenter.error);
+    }
+}
