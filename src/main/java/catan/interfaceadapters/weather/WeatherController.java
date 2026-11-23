@@ -1,4 +1,4 @@
-package catan.interfaceadapters.weather.weather;
+package catan.interfaceadapters.weather;
 
 import catan.usecase.weather.WeatherInputBoundary;
 import catan.usecase.weather.WeatherInputData;
