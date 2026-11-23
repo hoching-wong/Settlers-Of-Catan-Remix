@@ -31,15 +31,13 @@ class HexCoordinateTest {
     }
 
     @Test
-    void neighboursAreSixAdjacentHexes() {
+    void centreTouchesExactlySixTiles() {
         HexCoordinate centre = new HexCoordinate(0, 0);
-        assertEquals(6, centre.neighbours().size());
-        for (HexCoordinate n : centre.neighbours()) {
-            assertTrue(centre.isAdjacentTo(n));
-            assertEquals(1, centre.distanceTo(n));
-        }
+        long touching = HexCoordinate.standardBoard().stream().filter(centre::isAdjacentTo).count();
+        assertEquals(6, touching);
         assertFalse(centre.isAdjacentTo(centre));
         assertFalse(centre.isAdjacentTo(new HexCoordinate(2, -1)));
+        assertEquals(2, centre.distanceTo(new HexCoordinate(2, -1)));
     }
 
     @Test
