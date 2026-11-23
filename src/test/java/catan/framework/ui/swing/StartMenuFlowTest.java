@@ -83,7 +83,7 @@ class StartMenuFlowTest {
     }
 
     private String error() {
-        return find(view, "error", JLabel.class).getText();
+        return find(view, "startMenuError", JLabel.class).getText();
     }
 
     @Test

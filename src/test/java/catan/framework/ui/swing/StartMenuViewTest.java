@@ -62,7 +62,7 @@ class StartMenuViewTest {
     }
 
     private JLabel errorLabel() {
-        return find(view, "error", JLabel.class);
+        return find(view, "startMenuError", JLabel.class);
     }
 
     /** Waits for everything queued on the Swing thread. */

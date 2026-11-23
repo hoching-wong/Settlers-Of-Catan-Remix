@@ -30,7 +30,7 @@ class GameViewTest {
         assertEquals(" ", text("players"));
         assertEquals(" ", text("weather"));
         assertEquals(" ", text("message"));
-        assertEquals(" ", text("error"));
+        assertEquals(" ", text("gameError"));
         assertNotNull(find(view, "endTurn", JButton.class));
         assertNotNull(find(view, "boardPlaceholder", JLabel.class));
     }
@@ -65,11 +65,11 @@ class GameViewTest {
         viewModel.setError("That spot is already taken.");
         flush();
         assertEquals("Bob received 1 Lumber, 2 Grain.", text("message"));
-        assertEquals("That spot is already taken.", text("error"));
+        assertEquals("That spot is already taken.", text("gameError"));
 
         viewModel.setError("");
         flush();
-        assertEquals(" ", text("error"));
+        assertEquals(" ", text("gameError"));
     }
 
     @Test
@@ -96,7 +96,7 @@ class GameViewTest {
         viewModel.setError("e");
         viewModel.reset();
         flush();
-        for (String name : List.of("turn", "instruction", "players", "weather", "message", "error")) {
+        for (String name : List.of("turn", "instruction", "players", "weather", "message", "gameError")) {
             assertEquals(" ", text(name), name);
         }
     }

@@ -74,7 +74,7 @@ class GameOverViewTest {
     void anErrorIsShown() {
         viewModel.setError("The game is not over yet.");
         flush();
-        assertEquals("The game is not over yet.", text("error"));
+        assertEquals("The game is not over yet.", text("gameOverError"));
     }
 
     @Test
@@ -84,7 +84,7 @@ class GameOverViewTest {
         viewModel.reset();
         flush();
         assertEquals(" ", text("winner"));
-        assertEquals(" ", text("error"));
+        assertEquals(" ", text("gameOverError"));
         assertNull(find(view, "score0", JLabel.class));
     }
 

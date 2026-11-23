@@ -81,7 +81,7 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
         startButton.setName("start");
         startButton.addActionListener(e -> startGame());
 
-        errorLabel.setName("error");
+        errorLabel.setName("startMenuError");
         errorLabel.setForeground(new Color(0xB00020));
     }
 

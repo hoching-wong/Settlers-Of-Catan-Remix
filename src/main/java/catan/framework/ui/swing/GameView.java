@@ -54,7 +54,7 @@ public class GameView extends JPanel implements PropertyChangeListener {
         playersLabel.setName("players");
         weatherLabel.setName("weather");
         messageLabel.setName("message");
-        errorLabel.setName("error");
+        errorLabel.setName("gameError");
         errorLabel.setForeground(new Color(0xB00020));
         endTurnButton.setName("endTurn");
         endTurnButton.addActionListener(e -> endTurnController.endTurn());

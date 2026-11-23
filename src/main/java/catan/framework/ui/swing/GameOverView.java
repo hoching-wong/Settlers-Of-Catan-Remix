@@ -3,10 +3,12 @@ package catan.framework.ui.swing;
 import catan.interfaceadapter.controller.RestartGameController;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.ScoreEntry;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Objects;
@@ -32,39 +34,42 @@ public class GameOverView extends JPanel implements PropertyChangeListener {
         this.viewModel = Objects.requireNonNull(viewModel, "viewModel");
         Objects.requireNonNull(controller, "controller");
 
-        setLayout(new BorderLayout(8, 16));
+        // One centred column: title, winner, scores, error, buttons.
+        setLayout(new GridBagLayout());
         setBorder(BorderFactory.createEmptyBorder(32, 32, 32, 32));
 
         JLabel title = new JLabel("Game Over", SwingConstants.CENTER);
         title.setFont(title.getFont().deriveFont(Font.BOLD, 28f));
         winnerLabel.setName("winner");
         winnerLabel.setFont(winnerLabel.getFont().deriveFont(Font.BOLD, 20f));
-
-        JPanel top = new JPanel(new BorderLayout(4, 8));
-        top.add(title, BorderLayout.NORTH);
-        top.add(winnerLabel, BorderLayout.CENTER);
-        add(top, BorderLayout.NORTH);
-
         scoresPanel.setName("scores");
         scoresPanel.setLayout(new BoxLayout(scoresPanel, BoxLayout.Y_AXIS));
-        JPanel middle = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        middle.add(scoresPanel);
-        add(middle, BorderLayout.CENTER);
 
-        errorLabel.setName("error");
+        errorLabel.setName("gameOverError");
         errorLabel.setForeground(new Color(0xB00020));
         newGameButton.setName("newGame");
         newGameButton.addActionListener(e -> controller.newGame());
         exitButton.setName("exit");
         exitButton.addActionListener(e -> controller.exit());
-
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 0));
         buttons.add(newGameButton);
         buttons.add(exitButton);
-        JPanel bottom = new JPanel(new BorderLayout(4, 8));
-        bottom.add(errorLabel, BorderLayout.NORTH);
-        bottom.add(buttons, BorderLayout.CENTER);
-        add(bottom, BorderLayout.SOUTH);
+
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 0;
+        c.insets = new Insets(4, 4, 4, 4);
+        add(title, c);
+        c.gridy++;
+        add(winnerLabel, c);
+        c.gridy++;
+        c.insets = new Insets(16, 4, 16, 4);
+        add(scoresPanel, c);
+        c.gridy++;
+        c.insets = new Insets(4, 4, 4, 4);
+        add(errorLabel, c);
+        c.gridy++;
+        add(buttons, c);
 
         viewModel.addPropertyChangeListener(this);
         refresh();
