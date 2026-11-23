@@ -29,6 +29,6 @@ public class RestartGameInteractor implements RestartGameInputBoundary {
         }
 
         gameRepository.clear();
-        outputBoundary.presentReturnedToMenu(new RestartGameOutputData(inputData.choice()));
+        outputBoundary.presentReturnedToMenu(new RestartGameOutputData());
     }
 }

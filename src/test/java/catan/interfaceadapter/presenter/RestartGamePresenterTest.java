@@ -8,7 +8,6 @@ import catan.interfaceadapter.viewmodel.ScoreEntry;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel.Screen;
-import catan.usecase.restartgame.RestartGameInputData.Choice;
 import catan.usecase.restartgame.RestartGameOutputData;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -30,21 +29,19 @@ class RestartGamePresenterTest {
     }
 
     @Test
-    void bothButtonsClearTheOldGameAndShowTheStartMenu() {
-        for (Choice choice : Choice.values()) {
-            aFinishedGameIsOnScreen();
-            presenter.presentReturnedToMenu(new RestartGameOutputData(choice));
+    void returningClearsTheOldGameAndShowsTheStartMenu() {
+        aFinishedGameIsOnScreen();
+        presenter.presentReturnedToMenu(new RestartGameOutputData());
 
-            assertEquals(Screen.START_MENU, viewManager.getActiveScreen(), choice.name());
-            assertTrue(startMenu.getPlayerNames().isEmpty(), choice.name());
-            assertEquals("", startMenu.getCityName());
-            assertTrue(game.getPlayerNames().isEmpty());
-            assertEquals("", game.getCurrentPlayerName());
-            assertEquals("", game.getMessage());
-            assertEquals("", gameOver.getWinnerName());
-            assertTrue(gameOver.getScores().isEmpty());
-            assertEquals(List.of("Toronto"), startMenu.getCityNames());
-        }
+        assertEquals(Screen.START_MENU, viewManager.getActiveScreen());
+        assertTrue(startMenu.getPlayerNames().isEmpty());
+        assertEquals("", startMenu.getCityName());
+        assertTrue(game.getPlayerNames().isEmpty());
+        assertEquals("", game.getCurrentPlayerName());
+        assertEquals("", game.getMessage());
+        assertEquals("", gameOver.getWinnerName());
+        assertTrue(gameOver.getScores().isEmpty());
+        assertEquals(List.of("Toronto"), startMenu.getCityNames());
     }
 
     @Test

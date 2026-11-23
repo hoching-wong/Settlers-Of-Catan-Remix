@@ -1,20 +1,8 @@
 package catan.usecase.restartgame;
 
-import java.util.Objects;
-
 /**
- * Which button was pressed on the victory screen.
- *
- * @param choice NEW_GAME or EXIT. Both leave the finished game and return to the start menu.
+ * Leaving the victory screen needs no input: it always clears the finished game and returns to
+ * the start menu, where a new game can be set up.
  */
-public record RestartGameInputData(Choice choice) {
-
-    public enum Choice {
-        NEW_GAME,
-        EXIT
-    }
-
-    public RestartGameInputData {
-        Objects.requireNonNull(choice, "choice");
-    }
+public record RestartGameInputData() {
 }
