@@ -3,14 +3,19 @@ package catan.usecase.startgame;
 import static org.junit.jupiter.api.Assertions.*;
 
 import catan.entity.BoardFactory;
+import catan.entity.City;
 import catan.entity.CityLocation;
 import catan.entity.Dice;
+import catan.entity.Edge;
 import catan.entity.Game;
 import catan.entity.GamePhase;
 import catan.entity.Player;
 import catan.entity.ResourceType;
+import catan.entity.Road;
+import catan.entity.Settlement;
 import catan.entity.SetupStep;
 import catan.entity.Tile;
+import catan.entity.Vertex;
 import catan.entity.WeatherData;
 import catan.entity.WeatherType;
 import catan.usecase.port.GameRepository;
@@ -176,19 +181,63 @@ class StartGameInteractorTest {
     void everyDefaultCityCanBeSelected() {
         for (CityLocation city : CityLocation.defaults()) {
             presenter.started.clear();
+            repository.clear();
             start(city.getName(), "Ann", "Bob");
             assertEquals(city.getName(), presenter.started.get(0).cityName());
         }
     }
 
+    /** A game played to the end, saved as the current game. */
+    private Game finishedGameInRepository() {
+        Game game = new Game(BoardFactory.createStandardBoard(new Random(2)),
+                List.of(new Player("Old1"), new Player("Old2")), WeatherData.none(), new Dice(new Random(2)));
+        game.startGame();
+        while (game.getPhase() == GamePhase.SETUP) {
+            Player p = game.getCurrentPlayer();
+            Vertex spot = game.getBoard().getVertices().stream()
+                    .filter(v -> game.getBoard().isValidSettlementLocation(v, p, true)).findFirst().orElseThrow();
+            game.getBoard().placeBuilding(spot, new Settlement(p, spot));
+            game.setLastPlacedSettlement(spot);
+            game.advanceSetup();
+            Edge road = spot.getAdjacentEdges().get(0);
+            game.getBoard().placeRoad(road, new Road(p, road));
+            game.advanceSetup();
+        }
+        Player p = game.getCurrentPlayer();
+        for (int i = 0; i < 4; i++) {
+            p.addBuilding(new City(p, new Vertex(1000 + i)));
+        }
+        assertTrue(game.checkVictory());
+        repository.save(game);
+        repository.saves = 0;
+        return game;
+    }
+
     @Test
-    void startingAgainReplacesTheOldGame() {
+    void startingWhileAGameIsUnfinishedIsRefused() {
         start("Toronto", "Ann", "Bob");
-        Game first = repository.get();
+        Game unfinished = repository.get();
+        presenter.errors.clear();
+
         start("London", "Cat", "Dan", "Eve");
-        assertNotSame(first, repository.get());
+
+        assertEquals(List.of("A game is already in progress."), presenter.errors);
+        assertEquals(1, presenter.started.size(), "only the first start succeeded");
+        assertSame(unfinished, repository.get());
+        assertEquals(1, repository.saves);
+        assertEquals(1, weather.calls, "no weather request for the refused start");
+    }
+
+    @Test
+    void aFinishedGameCanBeReplaced() {
+        Game finished = finishedGameInRepository();
+
+        start("London", "Cat", "Dan", "Eve");
+
+        assertTrue(presenter.errors.isEmpty());
+        assertNotSame(finished, repository.get());
         assertEquals(3, repository.get().getPlayers().size());
-        assertEquals(2, repository.saves);
+        assertEquals(1, repository.saves);
     }
 
     // ---- weather ----
@@ -334,13 +383,13 @@ class StartGameInteractorTest {
     }
 
     @Test
-    void invalidInputKeepsTheCurrentGame() {
-        start("Toronto", "Ann", "Bob");
-        Game existing = repository.get();
+    void invalidInputKeepsTheFinishedGame() {
+        Game finished = finishedGameInRepository();
         start("Toronto", "Ann");
-        assertSame(existing, repository.get());
-        assertEquals(1, repository.saves);
-        assertEquals(1, weather.calls);
+        assertEquals(List.of("Please choose 2 to 4 players."), presenter.errors);
+        assertSame(finished, repository.get());
+        assertEquals(0, repository.saves);
+        assertEquals(0, weather.calls);
     }
 
     // ---- determinism and construction ----
