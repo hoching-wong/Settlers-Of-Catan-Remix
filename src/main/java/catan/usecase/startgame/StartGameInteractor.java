@@ -5,6 +5,7 @@ import catan.entity.BoardFactory;
 import catan.entity.CityLocation;
 import catan.entity.Dice;
 import catan.entity.Game;
+import catan.entity.GamePhase;
 import catan.entity.Player;
 import catan.entity.WeatherData;
 import catan.usecase.port.GameRepository;
@@ -36,6 +37,13 @@ public class StartGameInteractor implements StartGameInputBoundary {
     @Override
     public void startGame(StartGameInputData inputData) {
         Objects.requireNonNull(inputData, "inputData");
+
+        // Never throw away a game that is still being played. A finished game may be replaced.
+        Game current = gameRepository.get();
+        if (current != null && current.getPhase() != GamePhase.GAME_OVER) {
+            outputBoundary.presentError("A game is already in progress.");
+            return;
+        }
 
         List<String> names = new ArrayList<>();
         String nameError = validateNames(inputData.playerNames(), names);
