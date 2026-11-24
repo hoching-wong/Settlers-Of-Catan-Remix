@@ -2,7 +2,6 @@ package catan.usecase.weather;
 
 import catan.entity.CityLocation;
 import catan.entity.WeatherData;
-
 import java.util.Objects;
 
 /** Handles city selection and weather retrieval for the game. */
