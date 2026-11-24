@@ -1,9 +1,9 @@
-package usecase.build.rules;
+package catan.usecase.build.rules;
 
-import entity.Game;
-import entity.Player;
-import entity.StructureType;
-import usecase.build.placement.PlacementStrategy;
+import catan.entity.Game;
+import catan.entity.Player;
+import catan.entity.StructureType;
+import catan.usecase.build.placement.PlacementStrategy;
 
 /**
  * What a rule needs to decide whether a build is allowed.

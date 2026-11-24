@@ -1,6 +1,6 @@
-package usecase.build.rules;
+package catan.usecase.build.rules;
 
-import entity.GamePhase;
+import catan.entity.GamePhase;
 import java.util.Optional;
 
 /** Building with resources is only allowed during regular play. */

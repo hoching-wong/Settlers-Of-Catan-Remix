@@ -1,6 +1,6 @@
-package usecase.build.placement;
+package catan.usecase.build.placement;
 
-import entity.StructureType;
+import catan.entity.StructureType;
 import java.util.EnumMap;
 import java.util.Map;
 

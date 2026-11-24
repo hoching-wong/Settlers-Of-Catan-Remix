@@ -1,10 +1,10 @@
-package usecase.build.placement;
+package catan.usecase.build.placement;
 
-import entity.Board;
-import entity.Edge;
-import entity.Player;
-import entity.Road;
-import entity.StructureType;
+import catan.entity.Board;
+import catan.entity.Edge;
+import catan.entity.Player;
+import catan.entity.Road;
+import catan.entity.StructureType;
 
 /** A road goes on an empty edge that connects to the player's own road, settlement or city. */
 public class RoadPlacement implements PlacementStrategy {

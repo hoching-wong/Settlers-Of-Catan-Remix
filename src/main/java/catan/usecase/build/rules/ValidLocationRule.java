@@ -1,4 +1,4 @@
-package usecase.build.rules;
+package catan.usecase.build.rules;
 
 import java.util.Optional;
 

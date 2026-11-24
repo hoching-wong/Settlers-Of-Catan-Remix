@@ -1,10 +1,10 @@
-package usecase.build.placement;
+package catan.usecase.build.placement;
 
-import entity.Board;
-import entity.Player;
-import entity.Settlement;
-import entity.StructureType;
-import entity.Vertex;
+import catan.entity.Board;
+import catan.entity.Player;
+import catan.entity.Settlement;
+import catan.entity.StructureType;
+import catan.entity.Vertex;
 
 /**
  * A settlement goes on an empty corner that touches one of the player's roads and is at least

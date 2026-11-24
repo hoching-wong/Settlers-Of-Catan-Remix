@@ -1,11 +1,11 @@
-package usecase.build.placement;
+package catan.usecase.build.placement;
 
-import entity.Board;
-import entity.City;
-import entity.Player;
-import entity.Settlement;
-import entity.StructureType;
-import entity.Vertex;
+import catan.entity.Board;
+import catan.entity.City;
+import catan.entity.Player;
+import catan.entity.Settlement;
+import catan.entity.StructureType;
+import catan.entity.Vertex;
 
 /** A city can only replace one of the player's own settlements. */
 public class CityPlacement implements PlacementStrategy {

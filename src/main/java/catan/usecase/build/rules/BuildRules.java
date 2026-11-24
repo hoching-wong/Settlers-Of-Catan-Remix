@@ -1,4 +1,4 @@
-package usecase.build.rules;
+package catan.usecase.build.rules;
 
 /** The rule chains used by the build use cases, in the order the checks run. */
 public final class BuildRules {

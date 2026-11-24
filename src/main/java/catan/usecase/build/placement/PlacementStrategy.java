@@ -1,8 +1,8 @@
-package usecase.build.placement;
+package catan.usecase.build.placement;
 
-import entity.Board;
-import entity.Player;
-import entity.StructureType;
+import catan.entity.Board;
+import catan.entity.Player;
+import catan.entity.StructureType;
 import java.util.ArrayList;
 import java.util.List;
 

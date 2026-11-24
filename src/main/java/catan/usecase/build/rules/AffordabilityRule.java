@@ -1,7 +1,7 @@
-package usecase.build.rules;
+package catan.usecase.build.rules;
 
-import entity.BuildCost;
-import entity.ResourceType;
+import catan.entity.BuildCost;
+import catan.entity.ResourceType;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
