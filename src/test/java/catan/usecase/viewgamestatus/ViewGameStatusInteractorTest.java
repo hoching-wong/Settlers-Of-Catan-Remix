@@ -52,8 +52,8 @@ class ViewGameStatusInteractorTest {
   /** Tests that the current game status is retrieved correctly. */
   @Test
   void retrievesCurrentGameStatus() {
-    InMemoryGameRepository repository = new InMemoryGameRepository();
-    TestPresenter presenter = new TestPresenter();
+    final InMemoryGameRepository repository = new InMemoryGameRepository();
+    final TestPresenter presenter = new TestPresenter();
 
     Player alice = new Player("Alice");
     Player bob = new Player("Bob");
