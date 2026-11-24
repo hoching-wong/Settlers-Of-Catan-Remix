@@ -2,7 +2,6 @@ package catan.usecase.viewgamestatus;
 
 import catan.entity.ResourceType;
 import catan.entity.WeatherType;
-
 import java.util.List;
 import java.util.Map;
 

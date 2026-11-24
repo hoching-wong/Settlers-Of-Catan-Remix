@@ -5,17 +5,23 @@ import catan.entity.Player;
 import catan.entity.ResourceType;
 import catan.entity.WeatherData;
 import catan.usecase.port.GameRepository;
-
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/** Retrieves the current game status for display. */
 public class ViewGameStatusInteractor implements ViewGameStatusInputBoundary {
   private final GameRepository gameRepository;
   private final ViewGameStatusOutputBoundary presenter;
 
+  /**
+   * Creates an interactor with the required dependencies.
+   *
+   * @param gameRepository the repository containing the current game
+   * @param presenter the output boundary for displaying game status
+   */
   public ViewGameStatusInteractor(
       GameRepository gameRepository, ViewGameStatusOutputBoundary presenter) {
     this.gameRepository = Objects.requireNonNull(gameRepository);
