@@ -116,7 +116,7 @@ As a player, I want to be able to start a game on the same device with 2-4 playe
 As a player, I want to be able to select a city from the pre-determined list before starting the game so that weather can influence conditions in the game.
 
 ### User Story 5
-As a player, I want to see everyone's current total points, how much of each resource they have and the weather conditions.
+As a player, I want to see each player's current victory points and resource inventory, whose turn it is, the selected city, weather conditions, and the associated resource production bonus.
 
 ### User Story 6
 As a player, I want to get the conditional 2 points if I have the longest road (minimum 5 roads).
