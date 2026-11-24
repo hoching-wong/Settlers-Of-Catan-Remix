@@ -1,32 +1,46 @@
 package catan.entity;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
+/**
+ * Factory pattern: builds a ready-to-play {@link Board}: 19 tiles, 54 vertices and 72 edges with
+ * all adjacency wired up.
+ *
+ * <p>This class only does the geometry. What goes on each tile is decided by a
+ * {@link BoardLayoutStrategy} (or given directly as a {@link BoardLayout}), so the two jobs can
+ * change independently.
+ */
 public class BoardFactory {
-    private static final int RADIUS = 2;
-
-    private static final TerrainType[] TERRAIN_POOL = buildTerrainPool();
-    private static final int[] TOKEN_POOL = {2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12};
 
     private record Point(long x, long y) {}
 
     /**
-     * Creates the 19 tiles, 54 vertices and 72 edges, wires up adjacency, and shuffles the
-     * terrain and number tokens with the given Random.
+     * A random board: desert in the centre, other terrain and tokens shuffled, no other rule.
+     * Same signature as before, so existing callers do not change.
      */
     public static Board createStandardBoard(Random random) {
-        List<TerrainType> terrains = new ArrayList<>(List.of(TERRAIN_POOL));
-        Collections.shuffle(terrains, random);
-        List<Integer> tokens = new ArrayList<>();
-        for (int t : TOKEN_POOL) {
-            tokens.add(t);
+        return createBoard(new RandomLayoutStrategy(), random);
+    }
+
+    /** A standard board whose terrain and tokens are chosen by the strategy. */
+    public static Board createBoard(BoardLayoutStrategy strategy, Random random) {
+        Objects.requireNonNull(strategy, "strategy");
+        return createBoard(strategy.createLayout(random));
+    }
+
+    /** A standard board with exactly this layout. Tile i gets {@code layout} entry i. */
+    public static Board createBoard(BoardLayout layout) {
+        Objects.requireNonNull(layout, "layout");
+        List<HexCoordinate> coords = HexCoordinate.standardBoard();
+        if (layout.size() != coords.size()) {
+            throw new IllegalArgumentException("A standard board needs " + coords.size()
+                    + " tiles, the layout has " + layout.size());
         }
-        Collections.shuffle(tokens, random);
 
         List<Tile> tiles = new ArrayList<>();
         List<Vertex> vertices = new ArrayList<>();
@@ -34,52 +48,27 @@ public class BoardFactory {
         Map<Point, Vertex> vertexByPoint = new HashMap<>();
         Map<Long, Edge> edgeByVertexPair = new HashMap<>();
 
-        int tokenIndex = 0;
-        int tileId = 0;
-        for (int r = -RADIUS; r <= RADIUS; r++) {
-            for (int q = -RADIUS; q <= RADIUS; q++) {
-                if (Math.abs(q + r) > RADIUS) {
-                    continue;
-                }
-                TerrainType terrain = terrains.get(tileId);
-                int token = terrain == TerrainType.DESERT ? Tile.NO_TOKEN : tokens.get(tokenIndex++);
-                Tile tile = new Tile(tileId++, terrain, token);
+        for (int tileId = 0; tileId < coords.size(); tileId++) {
+            HexCoordinate c = coords.get(tileId);
+            Tile tile = new Tile(tileId, layout.terrainAt(tileId), layout.numberTokenAt(tileId));
 
-                Vertex[] corners = new Vertex[6];
-                for (int i = 0; i < 6; i++) {
-                    corners[i] = vertexAt(cornerPoint(q, r, i), vertexByPoint, vertices);
-                    tile.addVertex(corners[i]);
-                }
-                for (int i = 0; i < 6; i++) {
-                    tile.addEdge(edgeBetween(corners[i], corners[(i + 1) % 6], edgeByVertexPair, edges));
-                }
-                tiles.add(tile);
+            Vertex[] corners = new Vertex[6];
+            for (int i = 0; i < 6; i++) {
+                corners[i] = vertexAt(cornerPoint(c, i), vertexByPoint, vertices);
+                tile.addVertex(corners[i]);
             }
+            for (int i = 0; i < 6; i++) {
+                tile.addEdge(edgeBetween(corners[i], corners[(i + 1) % 6], edgeByVertexPair, edges));
+            }
+            tiles.add(tile);
         }
         return new Board(tiles, vertices, edges);
     }
 
-    private static TerrainType[] buildTerrainPool() {
-        List<TerrainType> pool = new ArrayList<>();
-        add(pool, TerrainType.FOREST, 4);
-        add(pool, TerrainType.HILLS, 3);
-        add(pool, TerrainType.FIELDS, 4);
-        add(pool, TerrainType.PASTURE, 4);
-        add(pool, TerrainType.MOUNTAINS, 3);
-        add(pool, TerrainType.DESERT, 1);
-        return pool.toArray(new TerrainType[0]);
-    }
-
-    private static void add(List<TerrainType> pool, TerrainType type, int count) {
-        for (int i = 0; i < count; i++) {
-            pool.add(type);
-        }
-    }
-
-    /** Corner i of the pointy-top hexagon at axial (q, r), rounded so shared corners match. */
-    private static Point cornerPoint(int q, int r, int i) {
-        double cx = Math.sqrt(3) * (q + r / 2.0);
-        double cy = 1.5 * r;
+    /** Corner i of the pointy-top hexagon at c, rounded so corners shared by tiles match. */
+    private static Point cornerPoint(HexCoordinate c, int i) {
+        double cx = Math.sqrt(3) * (c.q() + c.r() / 2.0);
+        double cy = 1.5 * c.r();
         double angle = Math.toRadians(60 * i - 30);
         return new Point(Math.round((cx + Math.cos(angle)) * 1000), Math.round((cy + Math.sin(angle)) * 1000));
     }
