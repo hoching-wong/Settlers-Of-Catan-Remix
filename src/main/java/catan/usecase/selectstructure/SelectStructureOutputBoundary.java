@@ -1,4 +1,4 @@
-package usecase.selectstructure;
+package catan.usecase.selectstructure;
 
 /** Implemented by the presenter that highlights the valid locations. */
 public interface SelectStructureOutputBoundary {

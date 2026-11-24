@@ -1,4 +1,4 @@
-package usecase.selectstructure;
+package catan.usecase.selectstructure;
 
 import java.util.List;
 

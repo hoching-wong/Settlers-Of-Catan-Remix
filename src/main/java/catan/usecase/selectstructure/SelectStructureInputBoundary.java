@@ -1,4 +1,4 @@
-package usecase.selectstructure;
+package catan.usecase.selectstructure;
 
 /**
  * Part of use case 1: the player picks a structure from the build menu and the system works out

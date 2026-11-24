@@ -1,12 +1,12 @@
-package usecase.selectstructure;
+package catan.usecase.selectstructure;
 
-import entity.Game;
-import usecase.build.placement.PlacementStrategies;
-import usecase.build.placement.PlacementStrategy;
-import usecase.build.rules.BuildRequest;
-import usecase.build.rules.BuildRule;
-import usecase.build.rules.BuildRules;
-import usecase.port.GameRepository;
+import catan.entity.Game;
+import catan.usecase.build.placement.PlacementStrategies;
+import catan.usecase.build.placement.PlacementStrategy;
+import catan.usecase.build.rules.BuildRequest;
+import catan.usecase.build.rules.BuildRule;
+import catan.usecase.build.rules.BuildRules;
+import catan.usecase.port.GameRepository;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -35,7 +35,7 @@ public class SelectStructureInteractor implements SelectStructureInputBoundary {
 
     @Override
     public void execute(SelectStructureInputData inputData) {
-        Game game = repository.getGame();
+        Game game = repository.get();
         if (game == null) {
             presenter.prepareFailView("No game is in progress.");
             return;

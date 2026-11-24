@@ -1,6 +1,6 @@
-package usecase.selectstructure;
+package catan.usecase.selectstructure;
 
-import entity.StructureType;
+import catan.entity.StructureType;
 
 /** @param structure the structure the player wants to build next */
 public record SelectStructureInputData(StructureType structure) {}
