@@ -70,9 +70,14 @@ A multiplayer strategy board game where players compete to build and expand thei
 
 ### 5. Longest Road
 - A player must have a continuous road of at least 5 segments to qualify for the Longest Road bonus
-- The player with the longest qualifying road receives 2 additional victory points
-- If another player builds a longer continuous road than the current holder, the Longest Road bonus transfers to that player
-- When the bonus transfers, the previous holder loses the 2 additional victory points
+- The player holding the Longest Road receives 2 additional victory points
+- Each road segment can only be counted once
+- An opponent's settlement or city can interrupt a player's continuous road
+- If another player has a longer qualifying road, the bonus transfers to that player
+- If another player ties with the current holder, the current holder retains the bonus
+- If multiple players tie for the longest qualifying road and none of them is the current holder, no player receives the bonus
+- If no player meets the minimum requirement of 5 segments, the bonus is removed
+- The system recalculates Longest Road after each successful build
 
 ### 6. Weather Bonus
 - When the game starts, the system retrieves the selected city's current weather conditions using the Open-Meteo Weather API
@@ -246,51 +251,58 @@ Postconditions:
 
 ### Use Case 5
 Primary Actor: Player
-Goal: Allows players to view game state information, including point totals, resource inventories, and current weather condition
+
+Goal: Allows players to view current game state information, including victory points, resource inventories, the active player, the selected city, weather conditions, and the associated resource production bonus.
+
 Preconditions:
 - The player is in an active game
 - Game board and UI elements are loaded
 
 Main path:
-1. The system continuously displays the status panel on the screen throughout the game
-2. The system reads and displays each player's current total victory points
-3. The system reads and displays the count of each resource type (e.g., Brick, Lumber, Ore, Grain, Wool) in each player's inventory
-4. The system displays the active weather conditions and any associated weather-based resource bonuses selected during game setup
+1. The system continuously displays the game status panel throughout the game
+2. The system displays each player's current total victory points
+3. The system displays the quantity of each resource (Lumber, Brick, Wool, Grain, and Ore) in each player's inventory
+4. The system displays the selected city, weather condition, and associated resource production bonus
 5. The system indicates which player is currently active
-6. The system updates the displayed points, resources, and turn indicator immediately whenever a game action changes any player's state
+6. The system updates the displayed victory points, resource quantities, and turn indicator whenever the game state changes
 
 Alternate path:
-1. If resource amounts or scores change (e.g., after building, trading, or rolling dice), the system immediately refreshes the status display to reflect the new values
-2. If a player hides or toggles their inventory view (if UI toggle is supported), the system allows them to re-expand it to view their resource breakdown
+4. If the weather API request fails, the system indicates that weather information is unavailable and no resource production bonus applies
+4. If the weather condition does not have an assigned bonus, the system indicates that normal resource production applies
 
 Post conditions:
-- All players have continuous access to player's score, resource count, active turn indicator, and global weather status
+- All players have continuous access to each player's victory points, resource inventory, and active turn indicator
+- The selected city, weather condition, and associated resource production bonus are displayed
+- The displayed information reflects the current game state
 
 ### Use Case 6
 Primary Actor: Player
-Goal: Grants 2 conditional victory points to the player who constructs the longest continuous road network of at least 5 segments, and reassigns or removes the points if another player surpasses or breaks that record
+
+Goal: Awards 2 conditional victory points to the player holding the longest continuous road of at least 5 segments, and reassigns or removes the bonus when the road network changes.
+
 Preconditions:
-- Player is in an active game
-- It's their turn
-- The player constructs a road segment or upgrades the board state
+- The player is in an active game
+- It is the player's turn
 
 Main path:
-1. The player places a new road segment on the board (following Use Case 1)
-2. The system calculates the longest continuous path of connected road segments for the active player 
-3. The system compares the active player's longest road length against the current threshold (minimum 5) and any existing "Longest Road" holder's record
-4. The active player achieves a continuous road length of at least 5 segments and higher than any other player's current road length 
-5. The system assigns the "Longest Road" title and 2 conditional victory points to the active player 
-6. If another player previously held the title, the system deducts 2 victory points from that player and transfers the title 
-7. The system updates the game status display to reflect the score change
+1. The player successfully builds a road, settlement, or city following Use Case 1
+2. The system calculates the longest continuous road of each player
+3. The system compares all players' longest road lengths
+4. The system determines the eligible Longest Road holder based on the minimum requirement of 5 segments
+5. The system awards 2 additional victory points to the Longest Road holder
+6. If the title transfers to another player, the previous holder loses the 2 additional victory points
+7. The system updates the Longest Road information and player victory points
 
 Alternate path:
-3. If the player's continuous road length is less than 5, no "Longest Road" points are awarded
-4. If the active player's continuous road length ties the current holder's road length, the current holder retains the title and the 2 points
-6. If a built settlement or city breaks a continuous road network, reducing the holder's road length below 5 (or below another player's length), the system recalculates all players' road lengths and either reassigns the 2 points to the new leader or removes them completely if no player meets the 5-road minimum
+4. If no player has a continuous road of at least 5 segments, the title remains unassigned or is removed from the current holder
+4. If multiple players tie for the longest qualifying road and the current holder is among them, the current holder retains the title and the 2 additional victory points
+4. If multiple players tie for the longest qualifying road and none of them is the current holder, no player receives the title
+6. If an opponent's settlement or city interrupts the current holder's continuous road, the system reassigns or removes the title according to the recalculated road lengths
 
 Post conditions:
-- The 2 conditional points for Longest Road are correctly assigned to the eligible player or unassigned if no player qualifies
-- All total victory point displays are updated
+- The Longest Road holder is correctly determined
+- The 2 conditional victory points are correctly assigned, transferred, or removed
+- The displayed Longest Road information and player victory points are updated
 
 ### Use Case 7
 Primary Actor: Player
@@ -594,7 +606,7 @@ The constructor is `protected` and rejects a null owner or location. `Settlement
 
 **Methods**
 - CityLocation(String name, double latitude, double longitude)
-- defaults() (the predefined city list: Toronto, London, Tokyo, New York)
+- defaults() (the predefined city list: Toronto, London, Tokyo, New York, Paris, Sydney)
 - getName()
 - getLatitude()
 - getLongitude()
@@ -718,20 +730,21 @@ These are supporting types rather than regular entities.
 **Documentation:** https://open-meteo.com/en/docs
 
 **How it is used in the program:**
-Our game will use the Open-Meteo Weather API to retrieve real-time weather conditions and incorporate them into the gameplay.
 
-- The game will provide a list of predefined cities (e.g., Toronto, London, Tokyo, and New York) for players to choose from
-- Each city will have predefined coordinates (latitude and longitude), which will be used to request its current weather conditions from the API
-- The API will be called once when the game starts, and the retrieved weather conditions will remain fixed throughout the game
-- The program will use the weather code returned by the API to classify the weather into five main categories. Each category will double the production of one of the 5 resources:
-    - **Sunny (WMO code 0–1):** Lumber production ×2
-    - **Cloudy (WMO code 2–3):** Brick production ×2
-    - **Rainy (WMO codes 51–67, 80–82):** Grain production ×2
-    - **Snowy (WMO codes 71–77, 85–86):** Wool production ×2
-    - **Stormy (WMO codes 95–99):** Ore production ×2
-- Other weather conditions, such as fog (WMO codes 45 and 48), will not provide any additional resource bonuses
-- Weather bonuses will only apply when the corresponding resource-producing tiles are activated by the dice. Normal resource production will remain unchanged for all other resources
-- If the API request fails, the game will continue with normal resource production
+Our game uses the Open-Meteo Weather API to retrieve current weather conditions and incorporate them into the gameplay.
+
+- The game provides six predefined cities (Toronto, London, Tokyo, New York, Paris, and Sydney) for players to choose from
+- Each city has predefined coordinates (latitude and longitude), which are used to request its current weather conditions from the API
+- The API is called once when the game starts, and the retrieved weather conditions remain fixed throughout the game
+- The program uses the weather code returned by the API to classify the weather into five main categories. Each category doubles the production of one of the five resources:
+  - **Sunny (WMO codes 0–1):** Lumber production ×2
+  - **Cloudy (WMO codes 2–3):** Brick production ×2
+  - **Rainy (WMO codes 51–67, 80–82):** Grain production ×2
+  - **Snowy (WMO codes 71–77, 85–86):** Wool production ×2
+  - **Stormy (WMO codes 95–99):** Ore production ×2
+- Other weather conditions, such as fog (WMO codes 45 and 48), do not provide any additional resource bonuses
+- Weather bonuses only apply when the corresponding resource-producing tiles are activated by the dice. Normal resource production remains unchanged for all other resources
+- If the API request fails or returns invalid weather data, the game continues with normal resource production
 
 ---
 
@@ -752,7 +765,7 @@ Our game will use the Open-Meteo Weather API to retrieve real-time weather condi
 - Java Development Kit (JDK 26)
 - IntelliJ IDEA
 - Maven (bundled with IntelliJ IDEA)
-- Internet connection (for retrieving weather data)
+- Internet connection (optional, for retrieving weather data)
 
 ### Running the Game
 
@@ -765,9 +778,28 @@ Our game will use the Open-Meteo Weather API to retrieve real-time weather condi
 7. Locate the main Java class containing the `main()` method
 8. Run the `main()` method to launch the game in a Java Swing window
 
+### Starting a Game
+
+1. Select the number of players (2–4)
+2. Enter a unique name for each player
+3. Select a city from the predefined list
+4. Click **Start Game**
+5. The system retrieves the weather information, determines the corresponding resource production bonus, and generates a new game board
+6. Players take turns placing their initial settlements and roads
+7. Once all players have placed two settlements and two roads, regular gameplay begins
+
+### Playing the Game
+
+1. Roll the dice at the beginning of your turn
+2. Receive resources based on the dice result and the weather-based production bonus
+3. Build roads, settlements, or cities if you have sufficient resources and the selected locations are valid
+4. View player scores, resource inventories, the current player, and weather information in the game status panel
+5. Click **End Turn** to pass the turn to the next player
+6. The first player to reach 10 victory points wins the game
+
 ### Weather API
 
-An internet connection is required to retrieve weather data when starting a new game. If the API request fails or the weather condition does not have an assigned bonus, the game will continue with normal resource production.
+An internet connection is required to retrieve weather data when starting a new game. However, if the API request fails, returns invalid weather data, or the weather condition does not have an assigned bonus, the game continues with normal resource production.
 
 
 ---
