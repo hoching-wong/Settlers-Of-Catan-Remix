@@ -1,5 +1,6 @@
-package catan.interfaceadapters.longestroad;
+package catan.interfaceadapter.presenter;
 
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.usecase.longestroad.LongestRoadOutputBoundary;
 import catan.usecase.longestroad.LongestRoadOutputData;
 import java.util.Objects;

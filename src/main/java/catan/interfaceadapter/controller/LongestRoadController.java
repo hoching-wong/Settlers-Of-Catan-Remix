@@ -1,4 +1,4 @@
-package catan.interfaceadapters.longestroad;
+package catan.interfaceadapter.controller;
 
 import catan.usecase.longestroad.LongestRoadInputBoundary;
 import catan.usecase.longestroad.LongestRoadInputData;

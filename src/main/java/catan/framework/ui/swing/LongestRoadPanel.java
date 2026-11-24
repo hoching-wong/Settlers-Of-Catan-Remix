@@ -1,6 +1,6 @@
-package catan.view.longestroad;
+package catan.framework.ui.swing;
 
-import catan.interfaceadapters.longestroad.LongestRoadViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import java.awt.GridLayout;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;

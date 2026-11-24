@@ -1,9 +1,10 @@
-package catan.interfaceadapters.longestroad;
+package catan.interfaceadapter.viewmodel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.Test;
 
 /** Tests for LongestRoadViewModel. */

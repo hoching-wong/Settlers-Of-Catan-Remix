@@ -1,10 +1,10 @@
-package catan.view.longestroad;
+package catan.framework.ui.swing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import catan.interfaceadapters.longestroad.LongestRoadPresenter;
-import catan.interfaceadapters.longestroad.LongestRoadViewModel;
+import catan.interfaceadapter.presenter.LongestRoadPresenter;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import java.awt.Component;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
