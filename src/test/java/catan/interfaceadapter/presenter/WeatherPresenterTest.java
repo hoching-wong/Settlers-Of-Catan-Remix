@@ -1,10 +1,11 @@
-package catan.interfaceadapters.weather;
+package catan.interfaceadapter.presenter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import catan.entity.CityLocation;
 import catan.entity.WeatherData;
+import catan.interfaceadapter.viewmodel.WeatherViewModel;
 import catan.usecase.weather.WeatherOutputData;
 import org.junit.jupiter.api.Test;
 

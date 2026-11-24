@@ -9,6 +9,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.OptionalInt;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,10 +22,24 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherGateway {
   private static final int SUCCESS_STATUS_CODE = 200;
 
   private final HttpClient client;
+  private final String apiUrl;
 
-  /** Constructs a weather data access object with an HTTP client. */
+  /** Creates a weather DAO using the real Open-Meteo API. */
   public OpenMeteoWeatherDataAccessObject() {
-    client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS)).build();
+    this(
+        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS)).build(),
+        API_URL);
+  }
+
+  /**
+   * Creates a weather DAO with a configurable API endpoint.
+   *
+   * @param client the HTTP client used to send requests
+   * @param apiUrl the weather API endpoint
+   */
+  OpenMeteoWeatherDataAccessObject(HttpClient client, String apiUrl) {
+    this.client = Objects.requireNonNull(client, "client");
+    this.apiUrl = Objects.requireNonNull(apiUrl, "apiUrl");
   }
 
   /**
@@ -32,13 +47,13 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherGateway {
    *
    * @param city the city whose weather should be retrieved
    * @return the current WMO weather code
-   * @throws WeatherUnavailableException if the weather cannot be retrieved
+   * @throws WeatherUnavailableException if weather cannot be retrieved
    */
   @Override
   public int fetchWeatherCode(CityLocation city) throws WeatherUnavailableException {
 
     String url =
-        API_URL
+        apiUrl
             + "?latitude="
             + city.getLatitude()
             + "&longitude="
@@ -80,8 +95,7 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherGateway {
    * Extracts the WMO weather code from a JSON response.
    *
    * @param responseBody the JSON response returned by the API
-   * @return the weather code, or an empty result if the response does not contain a valid weather
-   *     code
+   * @return the weather code, or an empty result if invalid
    */
   static OptionalInt parseWeatherCode(String responseBody) {
     try {

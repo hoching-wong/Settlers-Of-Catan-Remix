@@ -1,4 +1,4 @@
-package catan.interfaceadapters.weather;
+package catan.interfaceadapter.viewmodel;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;

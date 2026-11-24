@@ -3,8 +3,8 @@ package catan.framework.ui.swing;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import catan.interfaceadapters.weather.WeatherController;
-import catan.interfaceadapters.weather.WeatherViewModel;
+import catan.interfaceadapter.controller.WeatherController;
+import catan.interfaceadapter.viewmodel.WeatherViewModel;
 import catan.usecase.weather.WeatherInputBoundary;
 import java.awt.Component;
 import java.util.concurrent.CountDownLatch;
@@ -16,124 +16,185 @@ import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.Test;
 
-/** Tests for WeatherSelectionPanel. */
+/**
+ * Tests the WeatherSelectionPanel.
+ */
 class WeatherSelectionPanelTest {
 
-  @Test
-  void dropdownContainsSixCities() throws Exception {
-    WeatherSelectionPanel panel = createPanel(
-            inputData -> new Object(), new WeatherViewModel());
+    /**
+     * Tests that the dropdown contains six predefined cities.
+     *
+     * @throws Exception if a Swing operation fails
+     */
+    @Test
+    void dropdownContainsSixCities() throws Exception {
+        WeatherSelectionPanel panel = createPanel(
+                inputData -> { }, new WeatherViewModel());
 
-    SwingUtilities.invokeAndWait(() -> {
-        JComboBox<?> dropdown = findDropdown(panel);
+        SwingUtilities.invokeAndWait(() -> {
+            JComboBox<?> dropdown = findDropdown(panel);
 
-        assertEquals(6, dropdown.getItemCount());
-        assertEquals("Toronto", dropdown.getItemAt(0));
-        assertEquals("London", dropdown.getItemAt(1));
-        assertEquals("Tokyo", dropdown.getItemAt(2));
-        assertEquals("New York", dropdown.getItemAt(3));
-        assertEquals("Paris", dropdown.getItemAt(4));
-        assertEquals("Sydney", dropdown.getItemAt(5));
-        assertEquals(-1, dropdown.getSelectedIndex());
-    });
-  }
-
-  @Test
-  void noCitySelectedShowsMessage() throws Exception {
-    WeatherSelectionPanel panel = createPanel(
-            inputData -> new Object(), new WeatherViewModel());
-
-    SwingUtilities.invokeAndWait(() -> {
-        findStartButton(panel).doClick();
-
-        assertTrue(hasLabel(
-                panel, "Please select a city."));
-    });
-  }
-
-  @Test
-  void startButtonPassesSelectedCity() throws Exception {
-    AtomicReference<String> receivedCity = new AtomicReference<>();
-    CountDownLatch requestReceived = new CountDownLatch(1);
-
-    WeatherInputBoundary inputBoundary = inputData -> {
-        receivedCity.set(inputData.getCityName());
-        requestReceived.countDown();
-    };
-
-    WeatherSelectionPanel panel =
-            createPanel(inputBoundary, new WeatherViewModel());
-
-    SwingUtilities.invokeAndWait(() -> {
-        findDropdown(panel).setSelectedItem("Paris");
-        findStartButton(panel).doClick();
-    });
-
-    assertTrue(requestReceived.await(5, TimeUnit.SECONDS));
-    assertEquals("Paris", receivedCity.get());
-  }
-
-  @Test
-  void weatherUpdateChangesLabels() throws Exception {
-    WeatherViewModel viewModel = new WeatherViewModel();
-    WeatherSelectionPanel panel =
-            createPanel(inputData -> new Object(), viewModel);
-
-    SwingUtilities.invokeAndWait(() -> {
-        viewModel.setWeatherInformation(
-                "Paris", "Stormy", "Ore ×2");
-    });
-
-    SwingUtilities.invokeAndWait(() -> {
-        assertTrue(hasLabel(panel, "City: Paris"));
-        assertTrue(hasLabel(panel, "Weather: Stormy"));
-        assertTrue(hasLabel(panel, "Bonus: Ore ×2"));
-    });
-  }
-
-  private static WeatherSelectionPanel createPanel(
-          WeatherInputBoundary inputBoundary,
-          WeatherViewModel viewModel) throws Exception {
-    AtomicReference<WeatherSelectionPanel> panel = new AtomicReference<>();
-
-    SwingUtilities.invokeAndWait(() -> {
-        WeatherController controller = new WeatherController(inputBoundary);
-        panel.set(new WeatherSelectionPanel(controller, viewModel));
-    });
-
-    return panel.get();
-  }
-
-  private static JComboBox<?> findDropdown(WeatherSelectionPanel panel) {
-    for (Component component : panel.getComponents()) {
-      if (component instanceof JComboBox<?> dropdown) {
-        return dropdown;
-      }
+            assertEquals(6, dropdown.getItemCount());
+            assertEquals("Toronto", dropdown.getItemAt(0));
+            assertEquals("London", dropdown.getItemAt(1));
+            assertEquals("Tokyo", dropdown.getItemAt(2));
+            assertEquals("New York", dropdown.getItemAt(3));
+            assertEquals("Paris", dropdown.getItemAt(4));
+            assertEquals("Sydney", dropdown.getItemAt(5));
+            assertEquals(-1, dropdown.getSelectedIndex());
+        });
     }
 
-    throw new AssertionError("City dropdown not found");
-  }
+    /**
+     * Tests that a message appears when no city is selected.
+     *
+     * @throws Exception if a Swing operation fails
+     */
+    @Test
+    void noCitySelectedShowsMessage() throws Exception {
+        WeatherSelectionPanel panel = createPanel(
+                inputData -> { }, new WeatherViewModel());
 
-  private static JButton findStartButton(WeatherSelectionPanel panel) {
-    for (Component component : panel.getComponents()) {
-      if (component instanceof JButton button) {
-        return button;
-      }
+        SwingUtilities.invokeAndWait(() -> {
+            findStartButton(panel).doClick();
+
+            assertTrue(hasLabel(
+                    panel, "Please select a city."));
+        });
     }
 
-    throw new AssertionError("Start Game button not found");
-  }
+    /**
+     * Tests that clicking Start Game passes the selected city
+     * to the controller.
+     *
+     * @throws Exception if a Swing operation fails
+     */
+    @Test
+    void startButtonPassesSelectedCity() throws Exception {
+        AtomicReference<String> receivedCity = new AtomicReference<>();
+        CountDownLatch requestReceived = new CountDownLatch(1);
 
-  private static boolean hasLabel(
-          WeatherSelectionPanel panel, String expectedText) {
-    for (Component component : panel.getComponents()) {
-      if (component instanceof JLabel label
-              && expectedText.equals(label.getText())) {
-        return true;
-      }
+        WeatherInputBoundary inputBoundary = inputData -> {
+            receivedCity.set(inputData.getCityName());
+            requestReceived.countDown();
+        };
+
+        WeatherSelectionPanel panel =
+                createPanel(inputBoundary, new WeatherViewModel());
+
+        SwingUtilities.invokeAndWait(() -> {
+            findDropdown(panel).setSelectedItem("Paris");
+            findStartButton(panel).doClick();
+        });
+
+        assertTrue(requestReceived.await(5, TimeUnit.SECONDS));
+        assertEquals("Paris", receivedCity.get());
     }
 
-    return false;
-  }
+    /**
+     * Tests that weather information updates the labels.
+     *
+     * @throws Exception if a Swing operation fails
+     */
+    @Test
+    void weatherUpdateChangesLabels() throws Exception {
+        WeatherViewModel viewModel = new WeatherViewModel();
+
+        WeatherSelectionPanel panel =
+                createPanel(inputData -> { }, viewModel);
+
+        SwingUtilities.invokeAndWait(() -> {
+            viewModel.setWeatherInformation(
+                    "Paris", "Stormy", "Ore ×2");
+        });
+
+        SwingUtilities.invokeAndWait(() -> {
+            assertTrue(hasLabel(panel, "City: Paris"));
+            assertTrue(hasLabel(panel, "Weather: Stormy"));
+            assertTrue(hasLabel(panel, "Bonus: Ore ×2"));
+        });
+    }
+
+    /**
+     * Creates a weather selection panel on the Swing event thread.
+     *
+     * @param inputBoundary the weather input boundary
+     * @param viewModel the weather view model
+     * @return the created weather selection panel
+     * @throws Exception if a Swing operation fails
+     */
+    private static WeatherSelectionPanel createPanel(
+            WeatherInputBoundary inputBoundary,
+            WeatherViewModel viewModel) throws Exception {
+
+        AtomicReference<WeatherSelectionPanel> panel =
+                new AtomicReference<>();
+
+        SwingUtilities.invokeAndWait(() -> {
+            WeatherController controller =
+                    new WeatherController(inputBoundary);
+
+            panel.set(new WeatherSelectionPanel(
+                    controller, viewModel));
+        });
+
+        return panel.get();
+    }
+
+    /**
+     * Finds the city dropdown in the panel.
+     *
+     * @param panel the weather selection panel
+     * @return the city dropdown
+     */
+    private static JComboBox<?> findDropdown(
+            WeatherSelectionPanel panel) {
+
+        for (Component component : panel.getComponents()) {
+            if (component instanceof JComboBox<?> dropdown) {
+                return dropdown;
+            }
+        }
+
+        throw new AssertionError("City dropdown not found");
+    }
+
+    /**
+     * Finds the Start Game button in the panel.
+     *
+     * @param panel the weather selection panel
+     * @return the Start Game button
+     */
+    private static JButton findStartButton(
+            WeatherSelectionPanel panel) {
+
+        for (Component component : panel.getComponents()) {
+            if (component instanceof JButton button) {
+                return button;
+            }
+        }
+
+        throw new AssertionError("Start Game button not found");
+    }
+
+    /**
+     * Checks whether a label displays the expected text.
+     *
+     * @param panel the weather selection panel
+     * @param expectedText the expected label text
+     * @return true if the label exists
+     */
+    private static boolean hasLabel(
+            WeatherSelectionPanel panel,
+            String expectedText) {
+
+        for (Component component : panel.getComponents()) {
+            if (component instanceof JLabel label
+                    && expectedText.equals(label.getText())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
-

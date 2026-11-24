@@ -1,6 +1,7 @@
-package catan.interfaceadapters.weather;
+package catan.interfaceadapter.presenter;
 
 import catan.entity.WeatherData;
+import catan.interfaceadapter.viewmodel.WeatherViewModel;
 import catan.usecase.weather.WeatherOutputBoundary;
 import catan.usecase.weather.WeatherOutputData;
 import java.util.Objects;
