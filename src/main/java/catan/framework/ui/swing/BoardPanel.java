@@ -1,11 +1,11 @@
-package framework.ui.swing;
+package catan.framework.ui.swing;
 
-import interfaceadapter.viewmodel.BoardPoint;
-import interfaceadapter.viewmodel.BoardState;
-import interfaceadapter.viewmodel.BoardViewModel;
-import interfaceadapter.viewmodel.EdgeView;
-import interfaceadapter.viewmodel.TileView;
-import interfaceadapter.viewmodel.VertexView;
+import catan.interfaceadapter.viewmodel.BoardPoint;
+import catan.interfaceadapter.viewmodel.BoardState;
+import catan.interfaceadapter.viewmodel.BoardViewModel;
+import catan.interfaceadapter.viewmodel.EdgeView;
+import catan.interfaceadapter.viewmodel.TileView;
+import catan.interfaceadapter.viewmodel.VertexView;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;

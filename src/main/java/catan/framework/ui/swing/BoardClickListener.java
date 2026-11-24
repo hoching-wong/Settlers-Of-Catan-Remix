@@ -1,4 +1,4 @@
-package framework.ui.swing;
+package catan.framework.ui.swing;
 
 /**
  * Told when the player clicks a corner or an edge of the board. The build view listens for

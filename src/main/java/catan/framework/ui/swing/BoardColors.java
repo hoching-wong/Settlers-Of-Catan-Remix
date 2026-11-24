@@ -1,4 +1,4 @@
-package framework.ui.swing;
+package catan.framework.ui.swing;
 
 import java.awt.Color;
 import java.util.Map;

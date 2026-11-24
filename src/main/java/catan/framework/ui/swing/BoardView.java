@@ -1,9 +1,9 @@
-package framework.ui.swing;
+package catan.framework.ui.swing;
 
-import interfaceadapter.controller.BuildController;
-import interfaceadapter.controller.SelectStructureController;
-import interfaceadapter.viewmodel.BoardState;
-import interfaceadapter.viewmodel.BoardViewModel;
+import catan.interfaceadapter.controller.BuildController;
+import catan.interfaceadapter.controller.SelectStructureController;
+import catan.interfaceadapter.viewmodel.BoardState;
+import catan.interfaceadapter.viewmodel.BoardViewModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
