@@ -1,8 +1,8 @@
 package catan.framework.weather;
 
 import catan.entity.CityLocation;
-import catan.usecase.port.WeatherGateway;
-import catan.usecase.port.WeatherUnavailableException;
+import catan.usecase.weather.WeatherGateway;
+import catan.usecase.weather.WeatherUnavailableException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;

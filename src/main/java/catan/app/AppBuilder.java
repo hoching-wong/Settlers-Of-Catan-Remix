@@ -23,7 +23,7 @@ import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.usecase.endturn.EndTurnInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.GameRepository;
-import catan.usecase.port.WeatherGateway;
+import catan.usecase.weather.WeatherGateway;
 import catan.usecase.restartgame.RestartGameInteractor;
 import catan.usecase.startgame.StartGameInteractor;
 import java.awt.Dimension;

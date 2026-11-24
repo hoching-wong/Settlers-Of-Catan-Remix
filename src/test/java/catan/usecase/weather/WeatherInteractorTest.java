@@ -2,129 +2,225 @@ package catan.usecase.weather;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import catan.entity.CityLocation;
 import catan.entity.ResourceType;
 import catan.entity.WeatherType;
-import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 
-/** Tests for WeatherInteractor. */
+/**
+ * Tests the WeatherInteractor.
+ */
 class WeatherInteractorTest {
 
+  /**
+   * Tests that a valid city retrieves the correct weather.
+   */
   @Test
   void validCityRetrievesWeather() {
-    FakeWeatherDataAccess dataAccess = new FakeWeatherDataAccess(OptionalInt.of(95));
+    FakeWeatherGateway gateway = new FakeWeatherGateway(95);
     FakeWeatherPresenter presenter = new FakeWeatherPresenter();
-    WeatherInteractor interactor = new WeatherInteractor(dataAccess, presenter);
+
+    WeatherInteractor interactor =
+            new WeatherInteractor(gateway, presenter);
 
     interactor.execute(new WeatherInputData("Paris"));
 
-    assertEquals("Paris", dataAccess.lastRequestedCity.getName());
-    assertEquals(1, dataAccess.callCount);
+    assertEquals("Paris", gateway.lastRequestedCity.getName());
+    assertEquals(1, gateway.callCount);
+    assertNotNull(presenter.successData);
     assertEquals("Paris", presenter.successData.getCity().getName());
-    assertEquals(WeatherType.STORMY, presenter.successData.getWeather().getCondition());
-    assertEquals(ResourceType.ORE, presenter.successData.getWeather().getBonusResource());
-    assertEquals(2, presenter.successData.getWeather().getMultiplier());
+    assertEquals(WeatherType.STORMY,
+            presenter.successData.getWeather().getCondition());
+    assertEquals(ResourceType.ORE,
+            presenter.successData.getWeather().getBonusResource());
+    assertEquals(2,
+            presenter.successData.getWeather().getMultiplier());
     assertNull(presenter.errorMessage);
   }
 
+  /**
+   * Tests that null input produces an error.
+   */
   @Test
   void nullInputShowsError() {
-    FakeWeatherDataAccess dataAccess = new FakeWeatherDataAccess(OptionalInt.of(0));
+    FakeWeatherGateway gateway = new FakeWeatherGateway(0);
     FakeWeatherPresenter presenter = new FakeWeatherPresenter();
-    WeatherInteractor interactor = new WeatherInteractor(dataAccess, presenter);
+
+    WeatherInteractor interactor =
+            new WeatherInteractor(gateway, presenter);
 
     interactor.execute(null);
 
-    assertEquals("Please select a city before starting the game.", presenter.errorMessage);
+    assertEquals(
+            "Please select a city before starting the game.",
+            presenter.errorMessage);
     assertNull(presenter.successData);
-    assertEquals(0, dataAccess.callCount);
+    assertEquals(0, gateway.callCount);
   }
 
+  /**
+   * Tests that an empty city name produces an error.
+   */
   @Test
   void blankCityShowsError() {
-    FakeWeatherDataAccess dataAccess = new FakeWeatherDataAccess(OptionalInt.of(0));
+    FakeWeatherGateway gateway = new FakeWeatherGateway(0);
     FakeWeatherPresenter presenter = new FakeWeatherPresenter();
-    WeatherInteractor interactor = new WeatherInteractor(dataAccess, presenter);
+
+    WeatherInteractor interactor =
+            new WeatherInteractor(gateway, presenter);
 
     interactor.execute(new WeatherInputData(""));
 
-    assertEquals("Please select a city before starting the game.", presenter.errorMessage);
-    assertEquals(0, dataAccess.callCount);
+    assertEquals(
+            "Please select a city before starting the game.",
+            presenter.errorMessage);
+    assertEquals(0, gateway.callCount);
   }
 
+  /**
+   * Tests that an unknown city is rejected.
+   */
   @Test
   void unknownCityShowsError() {
-    FakeWeatherDataAccess dataAccess = new FakeWeatherDataAccess(OptionalInt.of(0));
+    FakeWeatherGateway gateway = new FakeWeatherGateway(0);
     FakeWeatherPresenter presenter = new FakeWeatherPresenter();
-    WeatherInteractor interactor = new WeatherInteractor(dataAccess, presenter);
+
+    WeatherInteractor interactor =
+            new WeatherInteractor(gateway, presenter);
 
     interactor.execute(new WeatherInputData("Berlin"));
 
-    assertEquals("The selected city is not available.", presenter.errorMessage);
+    assertEquals(
+            "The selected city is not available.",
+            presenter.errorMessage);
     assertNull(presenter.successData);
-    assertEquals(0, dataAccess.callCount);
+    assertEquals(0, gateway.callCount);
   }
 
+  /**
+   * Tests that API failure produces weather without a bonus.
+   */
   @Test
   void apiFailureContinuesWithoutBonus() {
-    FakeWeatherDataAccess dataAccess = new FakeWeatherDataAccess(OptionalInt.empty());
+    FakeWeatherGateway gateway = new FakeWeatherGateway(null);
     FakeWeatherPresenter presenter = new FakeWeatherPresenter();
-    WeatherInteractor interactor = new WeatherInteractor(dataAccess, presenter);
+
+    WeatherInteractor interactor =
+            new WeatherInteractor(gateway, presenter);
 
     interactor.execute(new WeatherInputData("Toronto"));
 
-    assertEquals(1, dataAccess.callCount);
-    assertEquals("Toronto", presenter.successData.getCity().getName());
-    assertFalse(presenter.successData.getWeather().hasBonus());
-    assertEquals(1, presenter.successData.getWeather().getMultiplier());
+    assertEquals(1, gateway.callCount);
+    assertNotNull(presenter.successData);
+    assertEquals("Toronto",
+            presenter.successData.getCity().getName());
+    assertFalse(
+            presenter.successData.getWeather().hasBonus());
+    assertEquals(1,
+            presenter.successData.getWeather().getMultiplier());
     assertNull(presenter.errorMessage);
   }
 
+  /**
+   * Tests that sunny weather produces the correct bonus.
+   */
   @Test
   void recognizedWeatherProvidesBonus() {
-    FakeWeatherDataAccess dataAccess = new FakeWeatherDataAccess(OptionalInt.of(0));
+    FakeWeatherGateway gateway = new FakeWeatherGateway(0);
     FakeWeatherPresenter presenter = new FakeWeatherPresenter();
-    WeatherInteractor interactor = new WeatherInteractor(dataAccess, presenter);
+
+    WeatherInteractor interactor =
+            new WeatherInteractor(gateway, presenter);
 
     interactor.execute(new WeatherInputData("Sydney"));
 
-    assertEquals(WeatherType.SUNNY, presenter.successData.getWeather().getCondition());
-    assertEquals(ResourceType.LUMBER, presenter.successData.getWeather().getBonusResource());
+    assertNotNull(presenter.successData);
+    assertEquals(WeatherType.SUNNY,
+            presenter.successData.getWeather().getCondition());
+    assertEquals(ResourceType.LUMBER,
+            presenter.successData.getWeather().getBonusResource());
     assertTrue(presenter.successData.getWeather().hasBonus());
   }
 
-  /** Returns predefined weather codes without accessing the network. */
-  private static class FakeWeatherDataAccess implements WeatherDataAccessInterface {
+  /**
+   * Tests that fog does not provide a resource bonus.
+   */
+  @Test
+  void fogWeatherHasNoBonus() {
+    FakeWeatherGateway gateway = new FakeWeatherGateway(45);
+    FakeWeatherPresenter presenter = new FakeWeatherPresenter();
 
-    private final OptionalInt weatherCode;
+    WeatherInteractor interactor =
+            new WeatherInteractor(gateway, presenter);
+
+    interactor.execute(new WeatherInputData("London"));
+
+    assertNotNull(presenter.successData);
+    assertEquals(WeatherType.FOG,
+            presenter.successData.getWeather().getCondition());
+    assertFalse(
+            presenter.successData.getWeather().hasBonus());
+    assertEquals(1,
+            presenter.successData.getWeather().getMultiplier());
+  }
+
+  /**
+   * Provides predefined weather codes without accessing the network.
+   */
+  private static class FakeWeatherGateway implements WeatherGateway {
+
+    private final Integer weatherCode;
     private CityLocation lastRequestedCity;
     private int callCount;
 
-    FakeWeatherDataAccess(OptionalInt weatherCode) {
+    /**
+     * Constructs a fake weather gateway.
+     *
+     * @param weatherCode the code to return, or null to simulate failure
+     */
+    FakeWeatherGateway(Integer weatherCode) {
       this.weatherCode = weatherCode;
     }
 
+    /**
+     * Returns the configured weather code.
+     *
+     * @param city the requested city
+     * @return the configured weather code
+     * @throws WeatherUnavailableException if failure is simulated
+     */
     @Override
-    public OptionalInt getWeatherCode(CityLocation city) {
-      this.lastRequestedCity = city;
-      this.callCount++;
+    public int fetchWeatherCode(CityLocation city)
+            throws WeatherUnavailableException {
+
+      lastRequestedCity = city;
+      callCount++;
+
+      if (weatherCode == null) {
+        throw new WeatherUnavailableException(
+                "Weather service unavailable");
+      }
+
       return weatherCode;
     }
   }
 
-  /** Records the Interactor's success and failure responses. */
-  private static class FakeWeatherPresenter implements WeatherOutputBoundary {
+  /**
+   * Records the interactor's success and failure responses.
+   */
+  private static class FakeWeatherPresenter
+          implements WeatherOutputBoundary {
 
     private WeatherOutputData successData;
     private String errorMessage;
 
     @Override
     public void prepareSuccessView(WeatherOutputData outputData) {
-      this.successData = outputData;
+      successData = outputData;
     }
 
     @Override

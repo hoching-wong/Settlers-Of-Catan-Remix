@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import catan.entity.CityLocation;
-import catan.usecase.port.WeatherUnavailableException;
+import catan.usecase.weather.WeatherUnavailableException;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;

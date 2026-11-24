@@ -1,4 +1,4 @@
-package catan.usecase.port;
+package catan.usecase.weather;
 
 import catan.entity.CityLocation;
 
