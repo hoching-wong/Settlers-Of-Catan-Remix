@@ -1,14 +1,14 @@
-package usecase.build;
+package catan.usecase.build;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import entity.Game;
-import entity.StructureType;
-import usecase.TestGames;
-import usecase.build.placement.PlacementStrategies;
-import usecase.build.rules.BuildRequest;
-import usecase.build.rules.BuildRule;
-import usecase.build.rules.BuildRules;
+import catan.entity.Game;
+import catan.entity.StructureType;
+import catan.usecase.TestGames;
+import catan.usecase.build.placement.PlacementStrategies;
+import catan.usecase.build.rules.BuildRequest;
+import catan.usecase.build.rules.BuildRule;
+import catan.usecase.build.rules.BuildRules;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
