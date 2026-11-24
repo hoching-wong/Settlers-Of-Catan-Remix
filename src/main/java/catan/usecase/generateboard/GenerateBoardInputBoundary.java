@@ -1,4 +1,4 @@
-package usecase.generateboard;
+package catan.usecase.generateboard;
 
 /** Use case 8: randomly generate the board for a new game. */
 public interface GenerateBoardInputBoundary {

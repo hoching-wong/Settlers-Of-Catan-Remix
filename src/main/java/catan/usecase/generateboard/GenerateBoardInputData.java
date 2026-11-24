@@ -1,4 +1,4 @@
-package usecase.generateboard;
+package catan.usecase.generateboard;
 
 /**
  * Input for generating a new board.

@@ -1,6 +1,6 @@
-package usecase.generateboard;
+package catan.usecase.generateboard;
 
-import usecase.boardstate.BoardSnapshot;
+import catan.usecase.boardstate.BoardSnapshot;
 
 /** The newly generated board, ready to be drawn. */
 public record GenerateBoardOutputData(BoardSnapshot board) {}
