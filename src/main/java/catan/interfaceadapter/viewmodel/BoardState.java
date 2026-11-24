@@ -1,4 +1,4 @@
-package interfaceadapter.viewmodel;
+package catan.interfaceadapter.viewmodel;
 
 import java.util.ArrayList;
 import java.util.HashSet;

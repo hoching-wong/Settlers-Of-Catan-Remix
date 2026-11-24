@@ -1,8 +1,8 @@
-package interfaceadapter.controller;
+package catan.interfaceadapter.controller;
 
-import entity.StructureType;
-import usecase.build.BuildInputBoundary;
-import usecase.build.BuildInputData;
+import catan.entity.StructureType;
+import catan.usecase.build.BuildInputBoundary;
+import catan.usecase.build.BuildInputData;
 
 /** Called when the player clicks a corner or edge while building. */
 public class BuildController {

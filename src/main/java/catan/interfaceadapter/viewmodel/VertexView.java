@@ -1,4 +1,4 @@
-package interfaceadapter.viewmodel;
+package catan.interfaceadapter.viewmodel;
 
 /**
  * @param building   "NONE", "SETTLEMENT" or "CITY"

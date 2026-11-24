@@ -1,7 +1,7 @@
-package interfaceadapter.controller;
+package catan.interfaceadapter.controller;
 
-import usecase.generateboard.GenerateBoardInputBoundary;
-import usecase.generateboard.GenerateBoardInputData;
+import catan.usecase.generateboard.GenerateBoardInputBoundary;
+import catan.usecase.generateboard.GenerateBoardInputData;
 
 /** Called when a new game starts (or the player asks for a different board). */
 public class GenerateBoardController {

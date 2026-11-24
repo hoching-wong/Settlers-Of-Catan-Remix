@@ -1,4 +1,4 @@
-package interfaceadapter.viewmodel;
+package catan.interfaceadapter.viewmodel;
 
 /**
  * A point on the board in board units, where 1 unit is the distance from a hex's centre to its

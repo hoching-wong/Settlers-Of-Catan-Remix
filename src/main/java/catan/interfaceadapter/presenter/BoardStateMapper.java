@@ -1,11 +1,11 @@
-package interfaceadapter.presenter;
+package catan.interfaceadapter.presenter;
 
-import interfaceadapter.viewmodel.BoardPoint;
-import interfaceadapter.viewmodel.BoardState;
-import interfaceadapter.viewmodel.EdgeView;
-import interfaceadapter.viewmodel.TileView;
-import interfaceadapter.viewmodel.VertexView;
-import usecase.boardstate.BoardSnapshot;
+import catan.interfaceadapter.viewmodel.BoardPoint;
+import catan.interfaceadapter.viewmodel.BoardState;
+import catan.interfaceadapter.viewmodel.EdgeView;
+import catan.interfaceadapter.viewmodel.TileView;
+import catan.interfaceadapter.viewmodel.VertexView;
+import catan.usecase.boardstate.BoardSnapshot;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

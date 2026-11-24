@@ -1,9 +1,9 @@
-package interfaceadapter.presenter;
+package catan.interfaceadapter.presenter;
 
-import interfaceadapter.viewmodel.BoardState;
-import interfaceadapter.viewmodel.BoardViewModel;
-import usecase.build.BuildOutputBoundary;
-import usecase.build.BuildOutputData;
+import catan.interfaceadapter.viewmodel.BoardState;
+import catan.interfaceadapter.viewmodel.BoardViewModel;
+import catan.usecase.build.BuildOutputBoundary;
+import catan.usecase.build.BuildOutputData;
 import java.util.Locale;
 
 /** Redraws the board after a build, or shows why the build was rejected. */

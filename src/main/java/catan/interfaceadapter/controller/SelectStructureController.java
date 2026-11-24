@@ -1,8 +1,8 @@
-package interfaceadapter.controller;
+package catan.interfaceadapter.controller;
 
-import entity.StructureType;
-import usecase.selectstructure.SelectStructureInputBoundary;
-import usecase.selectstructure.SelectStructureInputData;
+import catan.entity.StructureType;
+import catan.usecase.selectstructure.SelectStructureInputBoundary;
+import catan.usecase.selectstructure.SelectStructureInputData;
 
 /** Called when the player picks Road, Settlement or City from the build menu. */
 public class SelectStructureController {

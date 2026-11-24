@@ -1,9 +1,9 @@
-package interfaceadapter.presenter;
+package catan.interfaceadapter.presenter;
 
-import interfaceadapter.viewmodel.BoardState;
-import interfaceadapter.viewmodel.BoardViewModel;
-import usecase.selectstructure.SelectStructureOutputBoundary;
-import usecase.selectstructure.SelectStructureOutputData;
+import catan.interfaceadapter.viewmodel.BoardState;
+import catan.interfaceadapter.viewmodel.BoardViewModel;
+import catan.usecase.selectstructure.SelectStructureOutputBoundary;
+import catan.usecase.selectstructure.SelectStructureOutputData;
 import java.util.HashSet;
 import java.util.Locale;
 

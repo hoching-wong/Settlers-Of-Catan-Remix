@@ -1,6 +1,6 @@
-package interfaceadapter.presenter;
+package catan.interfaceadapter.presenter;
 
-import interfaceadapter.viewmodel.BoardPoint;
+import catan.interfaceadapter.viewmodel.BoardPoint;
 
 /**
  * Where things are on a pointy-top hex board, in board units (hex corner radius = 1).
