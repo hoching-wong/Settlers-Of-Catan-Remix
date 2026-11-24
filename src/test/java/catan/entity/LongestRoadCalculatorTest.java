@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
 import org.junit.jupiter.api.Test;
 
 class LongestRoadCalculatorTest {
@@ -34,9 +33,7 @@ class LongestRoadCalculatorTest {
         });
     }
 
-    /**
-     * Roads along consecutive vertex ids, for example path(ann, 0, 1, 2) is two roads.
-     */
+    /** Roads along consecutive vertex ids, for example path(ann, 0, 1, 2) is two roads. */
     private void path(Player p, int... ids) {
         for (int i = 0; i + 1 < ids.length; i++) {
             Edge e = link(ids[i], ids[i + 1]);
