@@ -1,21 +1,21 @@
-package usecase.build;
+package catan.usecase.build;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import entity.Board;
-import entity.Building;
-import entity.City;
-import entity.Game;
-import entity.GamePhase;
-import entity.Player;
-import entity.ResourceType;
-import entity.Settlement;
-import entity.StructureType;
-import entity.Vertex;
-import usecase.FakeGameRepository;
-import usecase.TestGames;
-import usecase.boardstate.BoardSnapshot;
-import usecase.build.placement.PlacementStrategies;
+import catan.entity.Board;
+import catan.entity.Building;
+import catan.entity.City;
+import catan.entity.Game;
+import catan.entity.GamePhase;
+import catan.entity.Player;
+import catan.entity.ResourceType;
+import catan.entity.Settlement;
+import catan.entity.StructureType;
+import catan.entity.Vertex;
+import catan.usecase.FakeGameRepository;
+import catan.usecase.TestGames;
+import catan.usecase.boardstate.BoardSnapshot;
+import catan.usecase.build.placement.PlacementStrategies;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
