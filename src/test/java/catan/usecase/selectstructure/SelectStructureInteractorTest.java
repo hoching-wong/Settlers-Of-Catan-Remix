@@ -1,14 +1,14 @@
-package usecase.selectstructure;
+package catan.usecase.selectstructure;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import entity.Building;
-import entity.Game;
-import entity.Player;
-import entity.StructureType;
-import usecase.FakeGameRepository;
-import usecase.TestGames;
-import usecase.build.placement.RoadPlacement;
+import catan.entity.Building;
+import catan.entity.Game;
+import catan.entity.Player;
+import catan.entity.StructureType;
+import catan.usecase.FakeGameRepository;
+import catan.usecase.TestGames;
+import catan.usecase.build.placement.RoadPlacement;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
