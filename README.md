@@ -25,6 +25,7 @@ A multiplayer strategy board game where players compete to build and expand thei
 - The game supports 2–4 players playing locally on the same device
 - Each player enters a unique name before starting the game
 - Players select a city from a predefined list to determine the weather conditions for the game
+- A new board is randomly generated for each game: the desert starts on the hex, the other 18 resource hexes and the number tokens are shuffled around it, and the "red" numbers 6 and 8 are never placed on neighbouring hexes.
 - After the game starts, players take turns placing their initial settlements and roads
 - Initial placement follows a snake order (forward order followed by reverse order):
   - **2 players:** P1 → P2 → P2 → P1
@@ -603,9 +604,11 @@ The constructor is `protected` and rejects a null owner or location. `Settlement
 - No instance variables
 
 **Methods**
-- createStandardBoard(Random random) (static; creates the 19 tiles, 54 vertices and 72 edges, wires up adjacency, and shuffles terrain and number tokens)
+- createStandardBoard(Random random) (static; a random board: desert in the centre, other terrain and number tokens shuffled, no other rule. Same as createBoard(new RandomLayoutStrategy(), random))
+- createBoard(BoardLayoutStrategy strategy, Random random) (static; asks the strategy for a BoardLayout, then builds it)
+- createBoard(BoardLayout layout) (static; creates the 19 tiles, 54 vertices and 72 edges, wires up adjacency, and gives tile i the terrain and token at position i of the layout; throws IllegalArgumentException if the layout does not have 19 tiles)
 
-Terrain mix: 4 forest, 3 hills, 4 fields, 4 pasture, 3 mountains, 1 desert. Number tokens: 2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12, assigned randomly to the non-desert tiles with no adjacency restriction (for example 6 and 8 may touch). Ids are sequential from 0. The same seeded `Random` always gives the same board.
+BoardFactory only builds the geometry. What goes on each tile is decided by a BoardLayoutStrategy. Tiles are created in HexCoordinate.standardBoard() order, so tile 9 is the centre. Ids are sequential from 0. The same seeded Random always gives the same board. The game itself uses BalancedLayoutStrategy (set in AppBuilder).
 
 ### Entity 16: BuildCost
 **Instance variables**
@@ -613,6 +616,48 @@ Terrain mix: 4 forest, 3 hills, 4 fields, 4 pasture, 3 mountains, 1 desert. Numb
 
 **Methods**
 - of(StructureType type) (returns the Map<ResourceType, Integer> cost)
+
+### Entity 17: HexCoordinate 
+**Instance variables**
+- int q
+- int r
+
+**Methods**
+- HexCoordinate(int q, int r) (axial coordinates; (0, 0) is the centre of the board)
+- standardBoard() (static; the 19 coordinates of the standard board in tile-id order, row by row from r = -2 to 2)
+- ofStandardTile(int tileId) (static; the coordinate of a tile; throws IllegalArgumentException for an unknown id)
+- neighbours() (the 6 coordinates touching this one, some may be off the board)
+- isAdjacentTo(HexCoordinate other) (true if the two hexes share a side)
+- distanceTo(HexCoordinate other) (number of steps between the two hexes)
+- q(), r()
+
+Constants: HexCoordinate.STANDARD_RADIUS (2), HexCoordinate.CENTRE_TILE_ID (9, the desert's tile).
+
+### Entity 18: BoardLayout
+**Instance variables**
+- List<TerrainType> terrains
+- List<Integer> numberTokens
+
+**Methods**
+- BoardLayout(List<TerrainType> terrains, List<Integer> numberTokens) (one terrain and one token per tile, in tile-id order; Tile.NO_TOKEN for the desert only. Throws IllegalArgumentException if the lists differ in size or a token does not match its terrain)
+- assignTokens(List<TerrainType> terrains, List<Integer> tokensForResourceTiles) (static; gives the tokens, in order, to every non-desert tile)
+- size()
+- terrainAt(int tileId)
+- numberTokenAt(int tileId)
+- getTerrains(), getNumberTokens() (unmodifiable lists)
+
+### Entity 19: StandardPieces
+**Instance variables**
+- No instance variables
+
+**Methods**
+- terrainPool() (static; 4 forest, 3 hills, 4 fields, 4 pasture, 3 mountains, 1 desert)
+- resourceTerrainPool() (static; the terrain pool without the desert, 18 hexes)
+- shuffledTerrainsWithDesertInCentre(Random random) (static; all 19 terrains in tile-id order, the 18 resource hexes shuffled and the desert on HexCoordinate.CENTRE_TILE_ID)
+- tokenPool() (static; 2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12)
+
+Each method returns a new list, so callers can shuffle it.
+
 
 ### Domain services
 These hold game rules that do not belong to a single entity. They have no state.
@@ -636,6 +681,22 @@ These hold game rules that do not belong to a single entity. They have no state.
 - If the holder is broken or beaten and several other players tie for the longest road, or there is no holder and players tie at the top, nobody holds the title (null).
 
 Both methods only calculate. They do not change `Player.hasLongestRoad`, so the use case sets it from the result of `findHolder`, after any build that could change road lengths (a new road, or a settlement or city that breaks an opponent's road).
+
+### Board generation strategies (Strategy pattern)
+
+### Interface: BoardLayoutStrategy
+**Methods**
+- createLayout(Random random) (returns a BoardLayout for the 19 tiles; must use only the given Random, so the same seed gives the same layout)
+
+### Strategy 1: RandomLayoutStrategy (implements BoardLayoutStrategy)
+**Methods**
+- createLayout(Random random) (desert in the centre, other terrain shuffled, tokens shuffled; nothing else is checked, so 6 and 8 may touch)
+
+### Strategy 2: BalancedLayoutStrategy (implements BoardLayoutStrategy)
+**Methods**
+- createLayout(Random random) (desert in the centre, other terrain shuffled once, then tokens reshuffled until no 6 or 8 is next to another 6 or 8)
+- hasAdjacentRedNumbers(BoardLayout layout) (static; true if two neighbouring tiles both have a 6 or an 8)
+- isRed(int token) (static; true for 6 and 8)
 
 **Enumerations**
 
