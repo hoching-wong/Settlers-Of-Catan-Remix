@@ -1,13 +1,13 @@
-package usecase.generateboard;
+package catan.usecase.generateboard;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import entity.BalancedLayoutStrategy;
-import entity.RandomLayoutStrategy;
-import entity.Tile;
-import usecase.FakeGameRepository;
-import usecase.TestGames;
-import usecase.boardstate.BoardSnapshot;
+import catan.entity.BalancedLayoutStrategy;
+import catan.entity.RandomLayoutStrategy;
+import catan.entity.Tile;
+import catan.usecase.FakeGameRepository;
+import catan.usecase.TestGames;
+import catan.usecase.boardstate.BoardSnapshot;
 import org.junit.jupiter.api.Test;
 
 class GenerateBoardInteractorTest {
@@ -31,7 +31,7 @@ class GenerateBoardInteractorTest {
     @Test
     void generatesAndSavesABoardAndShowsIt() {
         RecordingPresenter presenter = new RecordingPresenter();
-        new GenerateBoardInteractor(repo, presenter, new BalancedLayoutStrategy())
+        new GenerateBoardInteractor(repo, repo, presenter, new BalancedLayoutStrategy())
                 .execute(GenerateBoardInputData.random());
         assertNotNull(repo.board);
         assertNull(presenter.error);
@@ -51,8 +51,8 @@ class GenerateBoardInteractorTest {
     void sameSeedGivesSameBoard() {
         RecordingPresenter a = new RecordingPresenter();
         RecordingPresenter b = new RecordingPresenter();
-        new GenerateBoardInteractor(repo, a, new RandomLayoutStrategy()).execute(new GenerateBoardInputData(12L));
-        new GenerateBoardInteractor(repo, b, new RandomLayoutStrategy()).execute(new GenerateBoardInputData(12L));
+        new GenerateBoardInteractor(repo, repo, a, new RandomLayoutStrategy()).execute(new GenerateBoardInputData(12L));
+        new GenerateBoardInteractor(repo, repo, b, new RandomLayoutStrategy()).execute(new GenerateBoardInputData(12L));
         assertEquals(a.success.board().tiles(), b.success.board().tiles());
     }
 
@@ -60,7 +60,7 @@ class GenerateBoardInteractorTest {
     void refusesWhileAGameIsInProgress() {
         repo.game = TestGames.playingGame(1, "Ann", "Bob");
         RecordingPresenter presenter = new RecordingPresenter();
-        new GenerateBoardInteractor(repo, presenter, new RandomLayoutStrategy())
+        new GenerateBoardInteractor(repo, repo, presenter, new RandomLayoutStrategy())
                 .execute(GenerateBoardInputData.random());
         assertNotNull(presenter.error);
         assertNull(presenter.success);
