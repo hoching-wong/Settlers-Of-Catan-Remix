@@ -6,6 +6,10 @@ import catan.framework.ui.swing.GameOverView;
 import catan.framework.ui.swing.GameView;
 import catan.framework.ui.swing.ScreenSwitcher;
 import catan.framework.ui.swing.StartMenuView;
+import catan.framework.ui.swing.GameStatusPanel;
+import catan.interfaceadapter.controller.ViewGameStatusController;
+import catan.interfaceadapter.presenter.ViewGameStatusPresenter;
+import catan.interfaceadapter.viewmodel.GameStatusViewModel;
 import catan.interfaceadapter.controller.EndTurnController;
 import catan.interfaceadapter.controller.PlaceInitialController;
 import catan.interfaceadapter.controller.RestartGameController;
@@ -19,6 +23,7 @@ import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
+import catan.usecase.viewgamestatus.ViewGameStatusInteractor;
 import catan.usecase.endturn.EndTurnInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.GameRepository;
@@ -69,6 +74,16 @@ public class AppBuilder {
         GameViewModel game = new GameViewModel();
         GameOverViewModel gameOver = new GameOverViewModel();
         ViewManagerModel viewManager = new ViewManagerModel();
+        GameStatusViewModel statusViewModel = new GameStatusViewModel();
+
+        ViewGameStatusPresenter statusPresenter =
+                new ViewGameStatusPresenter(statusViewModel);
+
+        ViewGameStatusController statusController =
+                new ViewGameStatusController(
+                        new ViewGameStatusInteractor(gameRepository, statusPresenter));
+
+        GameStatusPanel statusPanel = new GameStatusPanel(statusViewModel);
 
         StartGameController startGame = new StartGameController(new StartGameInteractor(
                 gameRepository, weatherGateway, new StartGamePresenter(startMenu, game, viewManager), random));
@@ -82,6 +97,17 @@ public class AppBuilder {
 
         StartMenuView startMenuView = new StartMenuView(startMenu, startGame, backgroundExecutor);
         gameView = new GameView(game, endTurn);
+        gameView.setGameStatusPanel(statusPanel);
+
+        game.addPropertyChangeListener(event -> {
+            String property = event.getPropertyName();
+
+            if (GameViewModel.PLAYERS.equals(property)
+                    || GameViewModel.TURN.equals(property)
+                    || GameViewModel.MESSAGE.equals(property)) {
+                statusController.execute();
+            }
+        });
         GameOverView gameOverView = new GameOverView(gameOver, restartGame);
         return new ScreenSwitcher(viewManager, startMenuView, gameView, gameOverView);
     }
