@@ -2,6 +2,7 @@ package catan.usecase.build;
 
 import catan.entity.BuildCost;
 import catan.entity.Game;
+import catan.entity.LongestRoadCalculator;
 import catan.entity.Player;
 import catan.entity.ResourceType;
 import catan.usecase.boardstate.BoardSnapshot;
@@ -58,6 +59,10 @@ public class BuildInteractor implements BuildInputBoundary {
         placement.place(game.getBoard(), player, inputData.locationId());
 
         Player holder = game.updateLongestRoadHolder();
+        int longestRoadLength = holder == null
+                ? 0
+                : LongestRoadCalculator.longestRoadOf(holder, game.getBoard());
+
         boolean gameOver = game.checkVictory();
         repository.save(game);
 
@@ -68,6 +73,7 @@ public class BuildInteractor implements BuildInputBoundary {
                 player.getVictoryPoints(),
                 resourcesOf(player),
                 holder == null ? null : holder.getName(),
+                longestRoadLength,
                 gameOver,
                 gameOver ? game.getWinner().getName() : null,
                 BoardSnapshot.of(game.getBoard(), game.getPlayers())));

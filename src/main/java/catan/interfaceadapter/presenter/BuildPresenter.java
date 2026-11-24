@@ -2,6 +2,7 @@ package catan.interfaceadapter.presenter;
 
 import catan.interfaceadapter.viewmodel.BoardState;
 import catan.interfaceadapter.viewmodel.BoardViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.usecase.build.BuildOutputBoundary;
 import catan.usecase.build.BuildOutputData;
 import java.util.Locale;
@@ -9,9 +10,12 @@ import java.util.Locale;
 /** Redraws the board after a build, or shows why the build was rejected. */
 public class BuildPresenter implements BuildOutputBoundary {
     private final BoardViewModel viewModel;
+    private final LongestRoadViewModel longestRoadViewModel;
 
-    public BuildPresenter(BoardViewModel viewModel) {
+    public BuildPresenter(BoardViewModel viewModel,
+                          LongestRoadViewModel longestRoadViewModel) {
         this.viewModel = viewModel;
+        this.longestRoadViewModel = longestRoadViewModel;
     }
 
     @Override
@@ -30,6 +34,11 @@ public class BuildPresenter implements BuildOutputBoundary {
             message.append(" ").append(outputData.winnerName()).append(" wins the game!");
         }
         state.setMessage(message.toString(), false);
+
+        longestRoadViewModel.updateState(
+                outputData.longestRoadHolder(),
+                outputData.longestRoadLength());
+
         viewModel.firePropertyChanged();
     }
 

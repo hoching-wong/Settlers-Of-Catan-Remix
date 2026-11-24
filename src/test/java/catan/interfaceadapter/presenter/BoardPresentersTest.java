@@ -7,6 +7,7 @@ import catan.interfaceadapter.viewmodel.BoardPoint;
 import catan.interfaceadapter.viewmodel.BoardState;
 import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.interfaceadapter.viewmodel.EdgeView;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.TileView;
 import catan.interfaceadapter.viewmodel.VertexView;
 import catan.usecase.boardstate.BoardSnapshot;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 class BoardPresentersTest {
     private final BoardViewModel vm = new BoardViewModel();
+    private final LongestRoadViewModel longestRoadViewModel = new LongestRoadViewModel();
     private final BoardSnapshot snapshot = BoardSnapshot.of(BoardFactory.createStandardBoard(new Random(3)), List.of());
     private int fired;
 
@@ -91,13 +93,16 @@ class BoardPresentersTest {
     @Test
     void buildPresenterKeepsSelectionOnFailAndClearsOnSuccess() {
         vm.getState().select("SETTLEMENT", BoardState.VERTEX, java.util.Set.of(1));
-        BuildPresenter p = new BuildPresenter(vm);
+        BuildPresenter p = new BuildPresenter(vm, longestRoadViewModel);
         p.prepareFailView("nope");
         assertEquals("SETTLEMENT", vm.getState().getSelectedStructure());
         assertTrue(vm.getState().isError());
 
-        p.prepareSuccessView(new BuildOutputData("SETTLEMENT", 1, "Ann", 10, Map.of("ORE", 0), "Ann", true, "Ann",
-                snapshot));
+        p.prepareSuccessView(new BuildOutputData(
+                "SETTLEMENT", 1, "Ann", 10,
+                Map.of("ORE", 0), "Ann", 5,
+                true, "Ann", snapshot));
+
         assertNull(vm.getState().getSelectedStructure());
         assertFalse(vm.getState().isError());
         assertTrue(vm.getState().getMessage().contains("Longest Road"));

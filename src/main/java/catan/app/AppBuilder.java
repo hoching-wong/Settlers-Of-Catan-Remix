@@ -99,13 +99,15 @@ public class AppBuilder {
         GameViewModel game = new GameViewModel();
         GameOverViewModel gameOver = new GameOverViewModel();
         ViewManagerModel viewManager = new ViewManagerModel();
+        longestRoadViewModel = new LongestRoadViewModel();
 
         StartGameController startGame = new StartGameController(
                 new StartGameInteractor(
                         gameRepository,
                         weatherGateway,
                         new StartGamePresenter(
-                                startMenu, game, viewManager),
+                                startMenu, game, viewManager,
+                                longestRoadViewModel),
                         random));
 
         placeInitialController = new PlaceInitialController(
@@ -128,8 +130,6 @@ public class AppBuilder {
                 gameOver, viewManager);
 
         // Create and connect the Longest Road components.
-        longestRoadViewModel = new LongestRoadViewModel();
-
         LongestRoadPresenter longestRoadPresenter =
                 new LongestRoadPresenter(longestRoadViewModel);
 
