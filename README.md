@@ -32,6 +32,7 @@ A multiplayer strategy board game where players compete to build and expand thei
   - **4 players:** P1 → P2 → P3 → P4 → P4 → P3 → P2 → P1
 - During each placement turn, the player places one settlement followed by one road adjacent to that settlement
 - Initial placements do not require resources
+- After placing their second settlement (the one placed in the reverse half of the snake order), each player receives 1 resource for each resource tile adjacent to that settlement. The desert gives nothing. A player's first settlement gives no resources
 - Each player starts regular gameplay with 2 settlements and 2 roads
 
 ### 2. Turn Rules
@@ -195,7 +196,7 @@ Main path:
 3. The system prompts each player to enter their name.
 4. Each player enters their name and confirms their selection
 5. The system initializes a shared game board
-6. The system establishes the initial placement order using a snake order (forward order followed by reverse order), and each player places one settlement and one adjacent road during each placement turn.
+6. The system establishes the initial placement order using a snake order (forward order followed by reverse order), and each player places one settlement and one adjacent road during each placement turn. After a player places their second settlement, the system gives them 1 resource for each resource tile adjacent to it (the desert gives nothing).
 7. Once all players have placed two settlements and two roads, regular gameplay begins with Player 1, following the player order (P1 → P2 → P3 → P4, depending on the number of players).
 8. The system displays the game board and indicates which player's turn it is 
 9. Players take turns interacting with the same board 
@@ -406,7 +407,7 @@ Post conditions:
 
 Constants: `Game.MIN_PLAYERS` (2), `Game.MAX_PLAYERS` (4), `Game.WINNING_POINTS` (10).
 
-Turn flow during setup: place the settlement with `Board.placeBuilding`, call `setLastPlacedSettlement`, call `advanceSetup()`, then check the road with `Board.isValidRoadLocation(edge, player, game.getLastPlacedSettlement())`, place it with `Board.placeRoad`, and call `advanceSetup()` again. No resources are given for setup placements. `Game` does not roll the dice: the roll-dice use case calls `getDice().roll()`, then `markRolled()`.
+Turn flow during setup: place the settlement with `Board.placeBuilding`, call `setLastPlacedSettlement`, call `advanceSetup()`, then check the road with `Board.isValidRoadLocation(edge, player, game.getLastPlacedSettlement())`, place it with `Board.placeRoad`, and call `advanceSetup()` again. `Game` and `Board` do not give any resources for setup placements: the place-initial use case gives a player 1 resource per adjacent resource tile (using `Board.getTilesAdjacentTo` and `Tile.getResourceType()`, skipping the desert) after their second settlement, which is a placement turn with `getSetupIndex()` at or above the number of players. `Game` does not roll the dice: the roll-dice use case calls `getDice().roll()`, then `markRolled()`.
 
 ### Entity 2: Board
 **Instance variables**
