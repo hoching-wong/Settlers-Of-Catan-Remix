@@ -8,6 +8,7 @@ import catan.entity.Game;
 import catan.entity.GamePhase;
 import catan.entity.Player;
 import catan.entity.WeatherData;
+import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
 import catan.usecase.port.WeatherGateway;
 import catan.usecase.port.WeatherUnavailableException;
@@ -24,14 +25,33 @@ public class StartGameInteractor implements StartGameInputBoundary {
     private final WeatherGateway weatherGateway;
     private final StartGameOutputBoundary outputBoundary;
     private final Random random;
+    private final BoardRepository boardRepository;
 
-    /** @param random used for the board layout and the dice; pass a seeded one in tests */
+    /**
+     * Without a board repository: every game gets a new random board made here.
+     *
+     * @param random used for the board layout and the dice; pass a seeded one in tests
+     */
     public StartGameInteractor(GameRepository gameRepository, WeatherGateway weatherGateway,
                                StartGameOutputBoundary outputBoundary, Random random) {
+        this(gameRepository, weatherGateway, outputBoundary, random, new NoGeneratedBoard());
+    }
+
+    /**
+     * The game is played on the board the generate-board use case (UC8) stored in
+     * {@code boardRepository}, so it is the same board the player sees. If none has been
+     * generated, a random board is made here instead.
+     *
+     * @param random used for the dice, and for the board when none was generated
+     */
+    public StartGameInteractor(GameRepository gameRepository, WeatherGateway weatherGateway,
+                               StartGameOutputBoundary outputBoundary, Random random,
+                               BoardRepository boardRepository) {
         this.gameRepository = Objects.requireNonNull(gameRepository, "gameRepository");
         this.weatherGateway = Objects.requireNonNull(weatherGateway, "weatherGateway");
         this.outputBoundary = Objects.requireNonNull(outputBoundary, "outputBoundary");
         this.random = Objects.requireNonNull(random, "random");
+        this.boardRepository = Objects.requireNonNull(boardRepository, "boardRepository");
     }
 
     @Override
@@ -74,7 +94,7 @@ public class StartGameInteractor implements StartGameInputBoundary {
         for (String name : names) {
             players.add(new Player(name));
         }
-        Board board = BoardFactory.createStandardBoard(random);
+        Board board = takeBoard();
         Game game = new Game(board, players, weather, new Dice(random));
         game.startGame();
         gameRepository.save(game);
@@ -86,6 +106,32 @@ public class StartGameInteractor implements StartGameInputBoundary {
                 weather.getCondition(),
                 weather.getBonusResource(),
                 weather.getMultiplier()));
+    }
+
+    /**
+     * The generated board, which is then removed from the repository so the next game gets a
+     * new one. A random board if none was generated.
+     */
+    private Board takeBoard() {
+        Board generated = boardRepository.getBoard();
+        if (generated == null) {
+            return BoardFactory.createStandardBoard(random);
+        }
+        boardRepository.saveBoard(null);
+        return generated;
+    }
+
+    /** Used when there is no generate-board use case: never has a board. */
+    private static final class NoGeneratedBoard implements BoardRepository {
+        @Override
+        public void saveBoard(Board board) {
+            // nothing is kept
+        }
+
+        @Override
+        public Board getBoard() {
+            return null;
+        }
     }
 
     /** Fills {@code cleanNames} with the trimmed names. Returns an error message, or null if all is well. */
