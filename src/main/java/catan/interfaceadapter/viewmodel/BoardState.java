@@ -20,6 +20,8 @@ public class BoardState {
     private Set<Integer> highlightedVertexIds = new HashSet<>();
     private Set<Integer> highlightedEdgeIds = new HashSet<>();
 
+    private String setupTarget;
+
     private String message = "";
     private boolean error;
 
@@ -79,6 +81,18 @@ public class BoardState {
         targetKind = null;
         highlightedVertexIds = new HashSet<>();
         highlightedEdgeIds = new HashSet<>();
+    }
+
+    /**
+     * What a click places during initial placement: "VERTEX" while a settlement is expected,
+     * "EDGE" while a road is expected, or null outside the setup phase.
+     */
+    public String getSetupTarget() {
+        return setupTarget;
+    }
+
+    public void setSetupTarget(String setupTarget) {
+        this.setupTarget = setupTarget;
     }
 
     public String getMessage() {
