@@ -7,19 +7,23 @@ import java.util.Objects;
 /** Handles city selection and weather retrieval for the game. */
 public class WeatherInteractor implements WeatherInputBoundary {
 
-  private final WeatherGateway weatherGateway;
+  private final WeatherDataAccessInterface weatherDataAccessObject;
   private final WeatherOutputBoundary weatherPresenter;
 
   /**
    * Constructs the weather interactor.
    *
-   * @param weatherGateway the gateway used to retrieve weather data
+   * @param weatherDataAccessObject the object used to retrieve weather data
    * @param weatherPresenter the weather output presenter
    */
-  public WeatherInteractor(WeatherGateway weatherGateway, WeatherOutputBoundary weatherPresenter) {
+  public WeatherInteractor(
+          WeatherDataAccessInterface weatherDataAccessObject,
+          WeatherOutputBoundary weatherPresenter) {
 
-    this.weatherGateway = Objects.requireNonNull(weatherGateway, "weatherGateway");
-    this.weatherPresenter = Objects.requireNonNull(weatherPresenter, "weatherPresenter");
+    this.weatherDataAccessObject = Objects.requireNonNull(
+            weatherDataAccessObject, "weatherDataAccessObject");
+    this.weatherPresenter = Objects.requireNonNull(
+            weatherPresenter, "weatherPresenter");
   }
 
   /**
@@ -29,9 +33,12 @@ public class WeatherInteractor implements WeatherInputBoundary {
    */
   @Override
   public void execute(WeatherInputData inputData) {
-    if (inputData == null || inputData.getCityName() == null || inputData.getCityName().isBlank()) {
+    if (inputData == null
+            || inputData.getCityName() == null
+            || inputData.getCityName().isBlank()) {
 
-      weatherPresenter.prepareFailView("Please select a city before starting the game.");
+      weatherPresenter.prepareFailView(
+              "Please select a city before starting the game.");
       return;
     }
 
@@ -45,14 +52,16 @@ public class WeatherInteractor implements WeatherInputBoundary {
     }
 
     if (selectedCity == null) {
-      weatherPresenter.prepareFailView("The selected city is not available.");
+      weatherPresenter.prepareFailView(
+              "The selected city is not available.");
       return;
     }
 
     WeatherData weather;
 
     try {
-      int weatherCode = weatherGateway.fetchWeatherCode(selectedCity);
+      int weatherCode =
+              weatherDataAccessObject.fetchWeatherCode(selectedCity);
 
       weather = WeatherData.fromWmoCode(weatherCode);
 
@@ -60,7 +69,8 @@ public class WeatherInteractor implements WeatherInputBoundary {
       weather = WeatherData.none();
     }
 
-    WeatherOutputData outputData = new WeatherOutputData(selectedCity, weather);
+    WeatherOutputData outputData =
+            new WeatherOutputData(selectedCity, weather);
 
     weatherPresenter.prepareSuccessView(outputData);
   }

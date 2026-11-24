@@ -23,9 +23,9 @@ import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.usecase.endturn.EndTurnInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.GameRepository;
-import catan.usecase.weather.WeatherGateway;
 import catan.usecase.restartgame.RestartGameInteractor;
 import catan.usecase.startgame.StartGameInteractor;
+import catan.usecase.weather.WeatherDataAccessInterface;
 import java.awt.Dimension;
 import java.util.Objects;
 import java.util.Random;
@@ -41,7 +41,7 @@ import javax.swing.JFrame;
 public class AppBuilder {
 
     private final Random random;
-    private final WeatherGateway weatherGateway;
+    private final WeatherDataAccessInterface weatherDataAccessObject;
     private final GameRepository gameRepository;
     private final Executor backgroundExecutor;
 
@@ -61,15 +61,19 @@ public class AppBuilder {
      * Creates the application with configurable dependencies.
      *
      * @param random the random number generator
-     * @param weatherGateway the weather service
+     * @param weatherDataAccessObject the weather data access object
      * @param gameRepository the game repository
      * @param backgroundExecutor the background executor
      */
-    public AppBuilder(Random random, WeatherGateway weatherGateway,
-                      GameRepository gameRepository, Executor backgroundExecutor) {
+    public AppBuilder(
+            Random random,
+            WeatherDataAccessInterface weatherDataAccessObject,
+            GameRepository gameRepository,
+            Executor backgroundExecutor) {
+
         this.random = Objects.requireNonNull(random, "random");
-        this.weatherGateway = Objects.requireNonNull(
-                weatherGateway, "weatherGateway");
+        this.weatherDataAccessObject = Objects.requireNonNull(
+                weatherDataAccessObject, "weatherDataAccessObject");
         this.gameRepository = Objects.requireNonNull(
                 gameRepository, "gameRepository");
         this.backgroundExecutor = Objects.requireNonNull(
@@ -94,7 +98,7 @@ public class AppBuilder {
         StartGameController startGame = new StartGameController(
                 new StartGameInteractor(
                         gameRepository,
-                        weatherGateway,
+                        weatherDataAccessObject,
                         new StartGamePresenter(startMenu, game, viewManager),
                         random));
 

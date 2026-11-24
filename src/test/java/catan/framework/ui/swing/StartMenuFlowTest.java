@@ -10,7 +10,7 @@ import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel.Screen;
-import catan.usecase.weather.WeatherGateway;
+import catan.usecase.weather.WeatherDataAccessInterface;
 import catan.usecase.weather.WeatherUnavailableException;
 import catan.usecase.startgame.StartGameInteractor;
 import java.awt.Component;
@@ -34,7 +34,7 @@ class StartMenuFlowTest {
     private final ViewManagerModel viewManager = new ViewManagerModel();
     private boolean weatherDown;
 
-    private final WeatherGateway weather = city -> {
+    private final WeatherDataAccessInterface weather = city -> {
         if (weatherDown) {
             throw new WeatherUnavailableException("offline");
         }

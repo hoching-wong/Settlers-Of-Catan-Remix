@@ -19,7 +19,7 @@ import catan.entity.Vertex;
 import catan.entity.WeatherData;
 import catan.entity.WeatherType;
 import catan.usecase.port.GameRepository;
-import catan.usecase.weather.WeatherGateway;
+import catan.usecase.weather.WeatherDataAccessInterface;
 import catan.usecase.weather.WeatherUnavailableException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +54,7 @@ class StartGameInteractorTest {
         }
     }
 
-    private static class FakeWeatherGateway implements WeatherGateway {
+    private static class FakeWeatherDataAccessObject implements WeatherDataAccessInterface {
         int code;
         boolean fail;
         int calls;
@@ -87,7 +87,7 @@ class StartGameInteractorTest {
     }
 
     private final FakeGameRepository repository = new FakeGameRepository();
-    private final FakeWeatherGateway weather = new FakeWeatherGateway();
+    private final FakeWeatherDataAccessObject weather = new FakeWeatherDataAccessObject();
     private final RecordingPresenter presenter = new RecordingPresenter();
     private final StartGameInteractor interactor =
             new StartGameInteractor(repository, weather, presenter, new Random(1));
@@ -168,7 +168,7 @@ class StartGameInteractorTest {
     }
 
     @Test
-    void theGatewayGetsTheSelectedCitysCoordinates() {
+    void theWeatherDataAccessObjectGetsTheSelectedCitysCoordinates() {
         start("Tokyo", "Ann", "Bob");
         CityLocation tokyo = CityLocation.defaults().stream()
                 .filter(c -> c.getName().equals("Tokyo")).findFirst().orElseThrow();
@@ -244,11 +244,11 @@ class StartGameInteractorTest {
 
     @ParameterizedTest
     @CsvSource({
-        "0, SUNNY, LUMBER", "1, SUNNY, LUMBER",
-        "2, CLOUDY, BRICK", "3, CLOUDY, BRICK",
-        "61, RAINY, GRAIN", "82, RAINY, GRAIN",
-        "71, SNOWY, WOOL", "86, SNOWY, WOOL",
-        "95, STORMY, ORE", "99, STORMY, ORE"})
+            "0, SUNNY, LUMBER", "1, SUNNY, LUMBER",
+            "2, CLOUDY, BRICK", "3, CLOUDY, BRICK",
+            "61, RAINY, GRAIN", "82, RAINY, GRAIN",
+            "71, SNOWY, WOOL", "86, SNOWY, WOOL",
+            "95, STORMY, ORE", "99, STORMY, ORE"})
     void weatherCodeGivesTheBonus(int code, WeatherType condition, ResourceType resource) {
         weather.code = code;
         start("Toronto", "Ann", "Bob");

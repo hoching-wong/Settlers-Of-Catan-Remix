@@ -1,7 +1,7 @@
 package catan.framework.weather;
 
 import catan.entity.CityLocation;
-import catan.usecase.weather.WeatherGateway;
+import catan.usecase.weather.WeatherDataAccessInterface;
 import catan.usecase.weather.WeatherUnavailableException;
 import java.io.IOException;
 import java.net.URI;
@@ -15,7 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Retrieves current weather codes from the Open-Meteo Weather API. */
-public class OpenMeteoWeatherDataAccessObject implements WeatherGateway {
+public class OpenMeteoWeatherDataAccessObject implements WeatherDataAccessInterface {
 
   private static final String API_URL = "https://api.open-meteo.com/v1/forecast";
   private static final int TIMEOUT_SECONDS = 10;

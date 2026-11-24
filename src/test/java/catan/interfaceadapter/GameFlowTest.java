@@ -27,7 +27,7 @@ import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel.Screen;
 import catan.usecase.endturn.EndTurnInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
-import catan.usecase.weather.WeatherGateway;
+import catan.usecase.weather.WeatherDataAccessInterface;
 import catan.usecase.weather.WeatherUnavailableException;
 import catan.usecase.restartgame.GameResult;
 import catan.usecase.restartgame.RestartGameInteractor;
@@ -50,7 +50,7 @@ class GameFlowTest {
     private final GameOverViewModel gameOverView = new GameOverViewModel();
     private final ViewManagerModel viewManager = new ViewManagerModel();
 
-    private final WeatherGateway weather = city -> {
+    private final WeatherDataAccessInterface weather = city -> {
         if (weatherDown) {
             throw new WeatherUnavailableException("offline");
         }

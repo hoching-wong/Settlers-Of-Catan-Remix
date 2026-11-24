@@ -3,7 +3,7 @@ package catan.usecase.weather;
 import catan.entity.CityLocation;
 
 /** Defines the interface for retrieving weather data from an external weather service. */
-public interface WeatherGateway {
+public interface WeatherDataAccessInterface {
 
   /**
    * Retrieves the current WMO weather code for a selected city.
