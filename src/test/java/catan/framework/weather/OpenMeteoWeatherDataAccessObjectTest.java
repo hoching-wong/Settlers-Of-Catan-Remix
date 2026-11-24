@@ -96,6 +96,36 @@ class OpenMeteoWeatherDataAccessObjectTest {
     assertFalse(result.isPresent());
   }
 
+  /** Tests that a decimal weather code is rejected. */
+  @Test
+  void testDecimalWeatherCode() {
+    String json = "{\"current\":{\"weather_code\":2.5}}";
+
+    OptionalInt result = OpenMeteoWeatherDataAccessObject.parseWeatherCode(json);
+
+    assertFalse(result.isPresent());
+  }
+
+  /** Tests that a numeric string weather code is rejected. */
+  @Test
+  void testNumericStringWeatherCode() {
+    String json = "{\"current\":{\"weather_code\":\"95\"}}";
+
+    OptionalInt result = OpenMeteoWeatherDataAccessObject.parseWeatherCode(json);
+
+    assertFalse(result.isPresent());
+  }
+
+  /** Tests that a null weather code is rejected. */
+  @Test
+  void testNullWeatherCode() {
+    String json = "{\"current\":{\"weather_code\":null}}";
+
+    OptionalInt result = OpenMeteoWeatherDataAccessObject.parseWeatherCode(json);
+
+    assertFalse(result.isPresent());
+  }
+
   /**
    * Tests a successful HTTP request using city coordinates.
    *
@@ -164,6 +194,21 @@ class OpenMeteoWeatherDataAccessObjectTest {
   }
 
   /**
+   * Tests that a decimal weather code causes an exception.
+   *
+   * @throws IOException if the local server cannot start
+   */
+  @Test
+  void testInvalidApiWeatherCode() throws IOException {
+    startFakeServer(SUCCESS_STATUS, "{\"current\":{\"weather_code\":2.5}}");
+
+    OpenMeteoWeatherDataAccessObject dao = createDao();
+    CityLocation city = new CityLocation("Toronto", 43.6532, -79.3832);
+
+    assertThrows(WeatherUnavailableException.class, () -> dao.fetchWeatherCode(city));
+  }
+
+  /**
    * Starts a local server with a predefined response.
    *
    * @param statusCode the HTTP response status
@@ -175,18 +220,18 @@ class OpenMeteoWeatherDataAccessObjectTest {
     server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
 
     server.createContext(
-        "/forecast",
-        exchange -> {
-          requestedQuery.set(exchange.getRequestURI().getRawQuery());
+            "/forecast",
+            exchange -> {
+              requestedQuery.set(exchange.getRequestURI().getRawQuery());
 
-          byte[] response = responseBody.getBytes(StandardCharsets.UTF_8);
+              byte[] response = responseBody.getBytes(StandardCharsets.UTF_8);
 
-          exchange.sendResponseHeaders(statusCode, response.length);
+              exchange.sendResponseHeaders(statusCode, response.length);
 
-          try (OutputStream output = exchange.getResponseBody()) {
-            output.write(response);
-          }
-        });
+              try (OutputStream output = exchange.getResponseBody()) {
+                output.write(response);
+              }
+            });
 
     server.start();
   }

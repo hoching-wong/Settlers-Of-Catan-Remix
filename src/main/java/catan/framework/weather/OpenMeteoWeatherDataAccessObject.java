@@ -27,8 +27,8 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherDataAccessInterf
   /** Creates a weather DAO using the real Open-Meteo API. */
   public OpenMeteoWeatherDataAccessObject() {
     this(
-        HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS)).build(),
-        API_URL);
+            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS)).build(),
+            API_URL);
   }
 
   /**
@@ -53,20 +53,20 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherDataAccessInterf
   public int fetchWeatherCode(CityLocation city) throws WeatherUnavailableException {
 
     String url =
-        apiUrl
-            + "?latitude="
-            + city.getLatitude()
-            + "&longitude="
-            + city.getLongitude()
-            + "&current=weather_code";
+            apiUrl
+                    + "?latitude="
+                    + city.getLatitude()
+                    + "&longitude="
+                    + city.getLongitude()
+                    + "&current=weather_code";
 
     try {
       HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(url))
-              .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
-              .GET()
-              .build();
+              HttpRequest.newBuilder()
+                      .uri(URI.create(url))
+                      .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
+                      .GET()
+                      .build();
 
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -100,9 +100,13 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherDataAccessInterf
   static OptionalInt parseWeatherCode(String responseBody) {
     try {
       JSONObject json = new JSONObject(responseBody);
-      int weatherCode = json.getJSONObject("current").getInt("weather_code");
+      Object weatherCode = json.getJSONObject("current").get("weather_code");
 
-      return OptionalInt.of(weatherCode);
+      if (weatherCode instanceof Integer code) {
+        return OptionalInt.of(code);
+      }
+
+      return OptionalInt.empty();
 
     } catch (JSONException | IllegalArgumentException exception) {
       return OptionalInt.empty();
