@@ -83,7 +83,8 @@ public class AppBuilder {
                 new ViewGameStatusController(
                         new ViewGameStatusInteractor(gameRepository, statusPresenter));
 
-        GameStatusPanel statusPanel = new GameStatusPanel(statusViewModel);
+        GameStatusPanel statusPanel =
+                new GameStatusPanel(statusViewModel, startMenu);
 
         StartGameController startGame = new StartGameController(new StartGameInteractor(
                 gameRepository, weatherGateway, new StartGamePresenter(startMenu, game, viewManager), random));

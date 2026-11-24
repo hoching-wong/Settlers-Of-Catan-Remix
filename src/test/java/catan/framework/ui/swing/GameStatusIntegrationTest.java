@@ -10,6 +10,7 @@ import catan.entity.Player;
 import catan.entity.ResourceType;
 import catan.entity.WeatherData;
 import catan.framework.persistence.InMemoryGameRepository;
+import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.controller.ViewGameStatusController;
 import catan.interfaceadapter.presenter.ViewGameStatusPresenter;
 import catan.interfaceadapter.viewmodel.GameStatusViewModel;
@@ -46,7 +47,10 @@ class GameStatusIntegrationTest {
 
     ViewGameStatusController controller = new ViewGameStatusController(interactor);
 
-    statusPanel = new GameStatusPanel(statusViewModel);
+    StartMenuViewModel startMenuViewModel =
+            new StartMenuViewModel(List.of("Toronto"));
+
+    statusPanel = new GameStatusPanel(statusViewModel, startMenuViewModel);
 
     gameViewModel.addPropertyChangeListener(event -> {
       String property = event.getPropertyName();
