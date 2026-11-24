@@ -15,6 +15,7 @@ import catan.entity.Player;
 import catan.entity.Road;
 import catan.entity.Vertex;
 import catan.entity.WeatherData;
+import catan.usecase.FakeGameRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -24,7 +25,8 @@ import org.junit.jupiter.api.Test;
 class LongestRoadInteractorTest {
 
   /** Captures the output produced by the interactor. */
-  private static class TestOutputBoundary implements LongestRoadOutputBoundary {
+  private static class TestOutputBoundary
+          implements LongestRoadOutputBoundary {
 
     private LongestRoadOutputData lastOutput;
     private int callCount;
@@ -43,6 +45,8 @@ class LongestRoadInteractorTest {
     private final Player alice = new Player("Alice");
     private final Player bob = new Player("Bob");
     private final Game game;
+    private final FakeGameRepository repository =
+            new FakeGameRepository();
 
     private TestGame() {
       List<Vertex> vertices = new ArrayList<>();
@@ -53,16 +57,24 @@ class LongestRoadInteractorTest {
       }
 
       for (int i = 0; i < 10; i++) {
-        edges.add(new Edge(i, vertices.get(i), vertices.get(i + 1)));
+        edges.add(new Edge(
+                i, vertices.get(i), vertices.get(i + 1)));
       }
 
       for (int i = 11; i < 20; i++) {
-        edges.add(new Edge(i, vertices.get(i), vertices.get(i + 1)));
+        edges.add(new Edge(
+                i, vertices.get(i), vertices.get(i + 1)));
       }
 
       board = new Board(List.of(), vertices, edges);
 
-      game = new Game(board, List.of(alice, bob), WeatherData.none(), new Dice(new Random(1)));
+      game = new Game(
+              board,
+              List.of(alice, bob),
+              WeatherData.none(),
+              new Dice(new Random(1)));
+
+      repository.save(game);
     }
 
     private void addRoads(Player player, int start, int count) {
@@ -78,7 +90,8 @@ class LongestRoadInteractorTest {
     TestGame data = new TestGame();
     TestOutputBoundary output = new TestOutputBoundary();
 
-    LongestRoadInteractor interactor = new LongestRoadInteractor(data.game, output);
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor(data.repository, output);
 
     interactor.execute(new LongestRoadInputData());
 
@@ -95,7 +108,8 @@ class LongestRoadInteractorTest {
 
     data.addRoads(data.alice, 0, 5);
 
-    LongestRoadInteractor interactor = new LongestRoadInteractor(data.game, output);
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor(data.repository, output);
 
     interactor.execute(new LongestRoadInputData());
 
@@ -113,7 +127,8 @@ class LongestRoadInteractorTest {
 
     data.addRoads(data.alice, 0, 4);
 
-    LongestRoadInteractor interactor = new LongestRoadInteractor(data.game, output);
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor(data.repository, output);
 
     interactor.execute(new LongestRoadInputData());
 
@@ -127,7 +142,8 @@ class LongestRoadInteractorTest {
     TestGame data = new TestGame();
     TestOutputBoundary output = new TestOutputBoundary();
 
-    LongestRoadInteractor interactor = new LongestRoadInteractor(data.game, output);
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor(data.repository, output);
 
     data.addRoads(data.alice, 0, 5);
     interactor.execute(new LongestRoadInputData());
@@ -150,7 +166,8 @@ class LongestRoadInteractorTest {
     TestGame data = new TestGame();
     TestOutputBoundary output = new TestOutputBoundary();
 
-    LongestRoadInteractor interactor = new LongestRoadInteractor(data.game, output);
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor(data.repository, output);
 
     data.addRoads(data.alice, 0, 5);
     interactor.execute(new LongestRoadInputData());
@@ -170,9 +187,14 @@ class LongestRoadInteractorTest {
     TestGame data = new TestGame();
     TestOutputBoundary output = new TestOutputBoundary();
 
-    assertThrows(NullPointerException.class, () -> new LongestRoadInteractor(null, output));
+    assertThrows(
+            NullPointerException.class,
+            () -> new LongestRoadInteractor(null, output));
 
-    assertThrows(NullPointerException.class, () -> new LongestRoadInteractor(data.game, null));
+    assertThrows(
+            NullPointerException.class,
+            () -> new LongestRoadInteractor(
+                    data.repository, null));
   }
 
   @Test
@@ -180,8 +202,53 @@ class LongestRoadInteractorTest {
     TestGame data = new TestGame();
     TestOutputBoundary output = new TestOutputBoundary();
 
-    LongestRoadInteractor interactor = new LongestRoadInteractor(data.game, output);
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor(data.repository, output);
 
-    assertThrows(NullPointerException.class, () -> interactor.execute(null));
+    assertThrows(
+            NullPointerException.class,
+            () -> interactor.execute(null));
+  }
+
+  @Test
+  void noCurrentGamePresentsNoHolder() {
+    FakeGameRepository repository = new FakeGameRepository();
+    TestOutputBoundary output = new TestOutputBoundary();
+
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor(repository, output);
+
+    interactor.execute(new LongestRoadInputData());
+
+    assertNull(output.lastOutput.holderName());
+    assertEquals(0, output.lastOutput.roadLength());
+    assertEquals(1, output.callCount);
+    assertEquals(0, repository.gameSaves);
+  }
+
+  @Test
+  void usesNewGameAfterRepositoryIsReplaced() {
+    TestGame first = new TestGame();
+    TestGame second = new TestGame();
+    TestOutputBoundary output = new TestOutputBoundary();
+
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor(first.repository, output);
+
+    first.addRoads(first.alice, 0, 5);
+    interactor.execute(new LongestRoadInputData());
+
+    assertEquals("Alice", output.lastOutput.holderName());
+
+    second.addRoads(second.bob, 11, 6);
+    first.repository.save(second.game);
+
+    interactor.execute(new LongestRoadInputData());
+
+    assertEquals("Bob", output.lastOutput.holderName());
+    assertEquals(6, output.lastOutput.roadLength());
+    assertSame(
+            second.bob,
+            second.game.getLongestRoadHolder());
   }
 }

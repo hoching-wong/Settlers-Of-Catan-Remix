@@ -1,3 +1,4 @@
+
 package catan.usecase.longestroad;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,10 +15,11 @@ import catan.entity.Player;
 import catan.entity.Road;
 import catan.entity.Vertex;
 import catan.entity.WeatherData;
+import catan.framework.ui.swing.LongestRoadPanel;
 import catan.interfaceadapter.controller.LongestRoadController;
 import catan.interfaceadapter.presenter.LongestRoadPresenter;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
-import catan.framework.ui.swing.LongestRoadPanel;
+import catan.usecase.FakeGameRepository;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,11 +49,19 @@ class LongestRoadIntegrationTest {
   private final LongestRoadPresenter presenter =
           new LongestRoadPresenter(viewModel);
 
+  private final FakeGameRepository repository =
+          new FakeGameRepository();
+
   private final LongestRoadInteractor interactor =
-          new LongestRoadInteractor(game, presenter);
+          new LongestRoadInteractor(repository, presenter);
 
   private final LongestRoadController controller =
           new LongestRoadController(interactor);
+
+  /** Saves the current game in the repository. */
+  LongestRoadIntegrationTest() {
+    repository.save(game);
+  }
 
   /**
    * Creates two separate paths with six edges each.
@@ -68,12 +78,16 @@ class LongestRoadIntegrationTest {
 
     for (int i = 0; i < 6; i++) {
       edges.add(new Edge(
-              i, vertices.get(i), vertices.get(i + 1)));
+              i,
+              vertices.get(i),
+              vertices.get(i + 1)));
     }
 
     for (int i = 8; i < 14; i++) {
       edges.add(new Edge(
-              i, vertices.get(i), vertices.get(i + 1)));
+              i,
+              vertices.get(i),
+              vertices.get(i + 1)));
     }
 
     return new Board(List.of(), vertices, edges);
@@ -116,7 +130,7 @@ class LongestRoadIntegrationTest {
    */
   private void flushSwingEvents() throws Exception {
     SwingUtilities.invokeAndWait(() -> {
-        // Wait for previous Swing events.
+      // Wait for previous Swing events.
     });
   }
 
@@ -127,7 +141,9 @@ class LongestRoadIntegrationTest {
    * @param text the expected label
    * @return true if the label exists
    */
-  private boolean containsLabel(LongestRoadPanel panel, String text) {
+  private boolean containsLabel(
+          LongestRoadPanel panel, String text) {
+
     for (Component component : panel.getComponents()) {
       if (component instanceof JLabel label
               && text.equals(label.getText())) {
@@ -221,4 +237,3 @@ class LongestRoadIntegrationTest {
             panel, "Victory Point Bonus: +2 VP"));
   }
 }
-

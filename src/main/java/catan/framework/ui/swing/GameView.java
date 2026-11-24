@@ -2,6 +2,7 @@ package catan.framework.ui.swing;
 
 import catan.interfaceadapter.controller.EndTurnController;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -25,6 +26,7 @@ import javax.swing.SwingUtilities;
 public class GameView extends JPanel implements PropertyChangeListener {
     private final GameViewModel viewModel;
     private final EndTurnController endTurnController;
+    private final LongestRoadPanel longestRoadPanel;
 
     private final JLabel turnLabel = new JLabel(" ");
     private final JLabel instructionLabel = new JLabel(" ");
@@ -36,8 +38,16 @@ public class GameView extends JPanel implements PropertyChangeListener {
     private final JPanel boardSlot = new JPanel(new BorderLayout());
 
     public GameView(GameViewModel viewModel, EndTurnController endTurnController) {
+        this(viewModel, endTurnController, null);
+    }
+
+    /** Creates a game view with a Longest Road status panel. */
+    public GameView(GameViewModel viewModel, EndTurnController endTurnController,
+                    LongestRoadViewModel longestRoadViewModel) {
         this.viewModel = Objects.requireNonNull(viewModel, "viewModel");
         this.endTurnController = Objects.requireNonNull(endTurnController, "endTurnController");
+        this.longestRoadPanel = longestRoadViewModel == null
+                ? null : new LongestRoadPanel(longestRoadViewModel);
         buildLayout();
         viewModel.addPropertyChangeListener(this);
         refresh();
@@ -73,6 +83,11 @@ public class GameView extends JPanel implements PropertyChangeListener {
         boardSlot.setBorder(BorderFactory.createLineBorder(Color.GRAY));
         boardSlot.add(placeholder, BorderLayout.CENTER);
         add(boardSlot, BorderLayout.CENTER);
+
+        if (longestRoadPanel != null) {
+            longestRoadPanel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 8));
+            add(longestRoadPanel, BorderLayout.EAST);
+        }
 
         JPanel footer = new JPanel();
         footer.setLayout(new BoxLayout(footer, BoxLayout.Y_AXIS));

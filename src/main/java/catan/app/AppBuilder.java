@@ -7,19 +7,23 @@ import catan.framework.ui.swing.GameView;
 import catan.framework.ui.swing.ScreenSwitcher;
 import catan.framework.ui.swing.StartMenuView;
 import catan.interfaceadapter.controller.EndTurnController;
+import catan.interfaceadapter.controller.LongestRoadController;
 import catan.interfaceadapter.controller.PlaceInitialController;
 import catan.interfaceadapter.controller.RestartGameController;
 import catan.interfaceadapter.controller.StartGameController;
 import catan.interfaceadapter.presenter.EndTurnPresenter;
 import catan.interfaceadapter.presenter.GameOverPresenter;
+import catan.interfaceadapter.presenter.LongestRoadPresenter;
 import catan.interfaceadapter.presenter.PlaceInitialPresenter;
 import catan.interfaceadapter.presenter.RestartGamePresenter;
 import catan.interfaceadapter.presenter.StartGamePresenter;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.usecase.endturn.EndTurnInteractor;
+import catan.usecase.longestroad.LongestRoadInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.GameRepository;
 import catan.usecase.port.WeatherGateway;
@@ -35,10 +39,11 @@ import java.util.concurrent.Executors;
 import javax.swing.JFrame;
 
 /**
- * The only place where the concrete classes are created and connected to each other.
- * Everything else depends on interfaces.
+ * Creates and connects the components of the application.
+ * All concrete dependencies are assembled in this class.
  */
 public class AppBuilder {
+
     private final Random random;
     private final WeatherGateway weatherGateway;
     private final GameRepository gameRepository;
@@ -46,47 +51,110 @@ public class AppBuilder {
 
     private GameView gameView;
     private PlaceInitialController placeInitialController;
+    private LongestRoadController longestRoadController;
+    private LongestRoadViewModel longestRoadViewModel;
     private GameOverPresenter gameOverPresenter;
 
-    /** The application as it runs: a random board, in-memory storage and no weather service yet. */
+    /**
+     * Creates the application with default dependencies.
+     */
     public AppBuilder() {
-        this(new Random(), new WeatherNotConnected(), new InMemoryGameRepository(), daemonExecutor());
+        this(new Random(), new WeatherNotConnected(),
+                new InMemoryGameRepository(), daemonExecutor());
     }
 
-    /** For tests and for plugging in the real weather gateway. */
-    public AppBuilder(Random random, WeatherGateway weatherGateway, GameRepository gameRepository,
+    /**
+     * Creates the application with the provided dependencies.
+     *
+     * @param random the random number generator
+     * @param weatherGateway the weather data gateway
+     * @param gameRepository the repository storing the current game
+     * @param backgroundExecutor the executor for background tasks
+     */
+    public AppBuilder(Random random,
+                      WeatherGateway weatherGateway,
+                      GameRepository gameRepository,
                       Executor backgroundExecutor) {
+
         this.random = Objects.requireNonNull(random, "random");
-        this.weatherGateway = Objects.requireNonNull(weatherGateway, "weatherGateway");
-        this.gameRepository = Objects.requireNonNull(gameRepository, "gameRepository");
-        this.backgroundExecutor = Objects.requireNonNull(backgroundExecutor, "backgroundExecutor");
+        this.weatherGateway = Objects.requireNonNull(
+                weatherGateway, "weatherGateway");
+        this.gameRepository = Objects.requireNonNull(
+                gameRepository, "gameRepository");
+        this.backgroundExecutor = Objects.requireNonNull(
+                backgroundExecutor, "backgroundExecutor");
     }
 
-    /** Creates every screen and connects them. Safe to call without a display. */
+    /**
+     * Creates the application screens and connects their dependencies.
+     *
+     * @return the screen switcher containing all application screens
+     */
     public ScreenSwitcher buildScreens() {
         StartMenuViewModel startMenu = new StartMenuViewModel(
-                CityLocation.defaults().stream().map(CityLocation::getName).toList());
+                CityLocation.defaults().stream()
+                        .map(CityLocation::getName)
+                        .toList());
+
         GameViewModel game = new GameViewModel();
         GameOverViewModel gameOver = new GameOverViewModel();
         ViewManagerModel viewManager = new ViewManagerModel();
 
-        StartGameController startGame = new StartGameController(new StartGameInteractor(
-                gameRepository, weatherGateway, new StartGamePresenter(startMenu, game, viewManager), random));
-        placeInitialController = new PlaceInitialController(
-                new PlaceInitialInteractor(gameRepository, new PlaceInitialPresenter(game)));
-        EndTurnController endTurn = new EndTurnController(
-                new EndTurnInteractor(gameRepository, new EndTurnPresenter(game)));
-        RestartGameController restartGame = new RestartGameController(new RestartGameInteractor(
-                gameRepository, new RestartGamePresenter(startMenu, game, gameOver, viewManager)));
-        gameOverPresenter = new GameOverPresenter(gameOver, viewManager);
+        StartGameController startGame = new StartGameController(
+                new StartGameInteractor(
+                        gameRepository,
+                        weatherGateway,
+                        new StartGamePresenter(
+                                startMenu, game, viewManager),
+                        random));
 
-        StartMenuView startMenuView = new StartMenuView(startMenu, startGame, backgroundExecutor);
-        gameView = new GameView(game, endTurn);
-        GameOverView gameOverView = new GameOverView(gameOver, restartGame);
-        return new ScreenSwitcher(viewManager, startMenuView, gameView, gameOverView);
+        placeInitialController = new PlaceInitialController(
+                new PlaceInitialInteractor(
+                        gameRepository,
+                        new PlaceInitialPresenter(game)));
+
+        EndTurnController endTurn = new EndTurnController(
+                new EndTurnInteractor(
+                        gameRepository,
+                        new EndTurnPresenter(game)));
+
+        RestartGameController restartGame = new RestartGameController(
+                new RestartGameInteractor(
+                        gameRepository,
+                        new RestartGamePresenter(
+                                startMenu, game, gameOver, viewManager)));
+
+        gameOverPresenter = new GameOverPresenter(
+                gameOver, viewManager);
+
+        // Create and connect the Longest Road components.
+        longestRoadViewModel = new LongestRoadViewModel();
+
+        LongestRoadPresenter longestRoadPresenter =
+                new LongestRoadPresenter(longestRoadViewModel);
+
+        longestRoadController = new LongestRoadController(
+                new LongestRoadInteractor(
+                        gameRepository, longestRoadPresenter));
+
+        StartMenuView startMenuView = new StartMenuView(
+                startMenu, startGame, backgroundExecutor);
+
+        gameView = new GameView(
+                game, endTurn, longestRoadViewModel);
+
+        GameOverView gameOverView =
+                new GameOverView(gameOver, restartGame);
+
+        return new ScreenSwitcher(
+                viewManager, startMenuView, gameView, gameOverView);
     }
 
-    /** The application window. Needs a display. */
+    /**
+     * Creates the application window.
+     *
+     * @return the application frame
+     */
     public JFrame buildWindow() {
         JFrame frame = new JFrame("Settlers of Catan Remix");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -98,30 +166,72 @@ public class AppBuilder {
         return frame;
     }
 
-    // Available after buildScreens(), for the parts that plug into the screens.
-
-    /** The game screen. The board view goes into it with {@code setBoardComponent}. */
+    /**
+     * Returns the game view after the screens have been built.
+     *
+     * @return the game view
+     */
     public GameView getGameView() {
         return requireBuilt(gameView);
     }
 
-    /** What the board view calls when a vertex or edge is clicked during setup. */
+    /**
+     * Returns the controller for initial structure placement.
+     *
+     * @return the initial placement controller
+     */
     public PlaceInitialController getPlaceInitialController() {
         return requireBuilt(placeInitialController);
     }
 
-    /** What a use case that can end the game calls to show the victory screen. */
+    /**
+     * Returns the controller for recalculating Longest Road.
+     *
+     * @return the Longest Road controller
+     */
+    public LongestRoadController getLongestRoadController() {
+        return requireBuilt(longestRoadController);
+    }
+
+    /**
+     * Returns the view model containing Longest Road information.
+     *
+     * @return the Longest Road view model
+     */
+    public LongestRoadViewModel getLongestRoadViewModel() {
+        return requireBuilt(longestRoadViewModel);
+    }
+
+    /**
+     * Returns the presenter for displaying the game over screen.
+     *
+     * @return the game over presenter
+     */
     public GameOverPresenter getGameOverPresenter() {
         return requireBuilt(gameOverPresenter);
     }
 
+    /**
+     * Returns a component after verifying that it has been created.
+     *
+     * @param part the component to check
+     * @param <T> the component type
+     * @return the initialized component
+     * @throws IllegalStateException if the component has not been created
+     */
     private static <T> T requireBuilt(T part) {
         if (part == null) {
-            throw new IllegalStateException("Call buildScreens() first");
+            throw new IllegalStateException(
+                    "Call buildScreens() first");
         }
         return part;
     }
 
+    /**
+     * Creates a daemon executor for background tasks.
+     *
+     * @return the executor service
+     */
     private static ExecutorService daemonExecutor() {
         return Executors.newSingleThreadExecutor(task -> {
             Thread thread = new Thread(task, "start-game");
@@ -131,14 +241,26 @@ public class AppBuilder {
     }
 
     /**
-     * Stand-in until the Open-Meteo gateway exists in framework.weather. Every request reports
-     * that the weather is unavailable, so games start with normal resource production.
-     * TODO: replace with OpenMeteoWeatherGateway.
+     * Temporary weather gateway used when the weather service
+     * is not connected.
      */
-    private static final class WeatherNotConnected implements WeatherGateway {
+    private static final class WeatherNotConnected
+            implements WeatherGateway {
+
+        /**
+         * Reports that weather data is unavailable.
+         *
+         * @param city the selected city
+         * @return the weather code, if available
+         * @throws WeatherUnavailableException because the
+         *         weather service is not connected
+         */
         @Override
-        public int fetchWeatherCode(CityLocation city) throws WeatherUnavailableException {
-            throw new WeatherUnavailableException("The weather service is not connected yet");
+        public int fetchWeatherCode(CityLocation city)
+                throws WeatherUnavailableException {
+
+            throw new WeatherUnavailableException(
+                    "The weather service is not connected yet");
         }
     }
 }
