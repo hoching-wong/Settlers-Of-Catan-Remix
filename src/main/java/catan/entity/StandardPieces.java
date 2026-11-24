@@ -1,4 +1,4 @@
-package entity;
+package catan.entity;
 
 import java.util.ArrayList;
 import java.util.Collections;
