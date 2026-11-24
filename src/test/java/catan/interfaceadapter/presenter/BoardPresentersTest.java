@@ -1,18 +1,18 @@
-package presenter;
+package catan.interfaceadapter.presenter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import entity.BoardFactory;
-import interfaceadapter.viewmodel.BoardPoint;
-import interfaceadapter.viewmodel.BoardState;
-import interfaceadapter.viewmodel.BoardViewModel;
-import interfaceadapter.viewmodel.EdgeView;
-import interfaceadapter.viewmodel.TileView;
-import interfaceadapter.viewmodel.VertexView;
-import usecase.boardstate.BoardSnapshot;
-import usecase.build.BuildOutputData;
-import usecase.generateboard.GenerateBoardOutputData;
-import usecase.selectstructure.SelectStructureOutputData;
+import catan.entity.BoardFactory;
+import catan.interfaceadapter.viewmodel.BoardPoint;
+import catan.interfaceadapter.viewmodel.BoardState;
+import catan.interfaceadapter.viewmodel.BoardViewModel;
+import catan.interfaceadapter.viewmodel.EdgeView;
+import catan.interfaceadapter.viewmodel.TileView;
+import catan.interfaceadapter.viewmodel.VertexView;
+import catan.usecase.boardstate.BoardSnapshot;
+import catan.usecase.build.BuildOutputData;
+import catan.usecase.generateboard.GenerateBoardOutputData;
+import catan.usecase.selectstructure.SelectStructureOutputData;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
