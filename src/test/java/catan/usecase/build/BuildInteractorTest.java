@@ -16,7 +16,9 @@ import catan.usecase.FakeGameRepository;
 import catan.usecase.TestGames;
 import catan.usecase.boardstate.BoardSnapshot;
 import catan.usecase.build.placement.PlacementStrategies;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class BuildInteractorTest {
@@ -55,6 +57,21 @@ class BuildInteractorTest {
         return placements.get(type).validLocations(game.getBoard(), game.getCurrentPlayer()).get(0);
     }
 
+    /** What a failed build must not change: the whole hand, the roads, the buildings and the points. */
+    private record PlayerState(Map<ResourceType, Integer> hand, int roads, int buildings, int victoryPoints) {
+        static PlayerState of(Player p) {
+            Map<ResourceType, Integer> hand = new EnumMap<>(ResourceType.class);
+            for (ResourceType type : ResourceType.values()) {
+                hand.put(type, p.getResources().getResourceCount(type));
+            }
+            return new PlayerState(hand, p.getRoads().size(), p.getBuildings().size(), p.getVictoryPoints());
+        }
+    }
+
+    private static void assertUnchanged(PlayerState before, Player p) {
+        assertEquals(before, PlayerState.of(p), "a failed build changed " + p.getName() + "'s state");
+    }
+
     @Test
     void noGameFails() {
         interactor.execute(new BuildInputData(StructureType.ROAD, 0));
@@ -66,8 +83,10 @@ class BuildInteractorTest {
         Game game = TestGames.playingGame(4, "Ann", "Bob");
         TestGames.give(game.getCurrentPlayer(), 5);
         repo.game = game;
+        PlayerState before = PlayerState.of(game.getCurrentPlayer());
         interactor.execute(new BuildInputData(StructureType.ROAD, firstValid(game, StructureType.ROAD)));
         assertEquals("Roll the dice before building.", presenter.error);
+        assertUnchanged(before, game.getCurrentPlayer());
     }
 
     @Test
@@ -101,19 +120,22 @@ class BuildInteractorTest {
         while (valid.contains(invalid) || game.getBoard().getEdge(invalid).isOccupied()) {
             invalid++;
         }
+        PlayerState before = PlayerState.of(ann);
         interactor.execute(new BuildInputData(StructureType.ROAD, invalid));
         assertTrue(presenter.error.startsWith("A road must go on an empty edge"));
-        assertEquals(5, ann.getResources().getResourceCount(ResourceType.LUMBER));
+        assertUnchanged(before, ann);
         assertFalse(game.getBoard().getEdge(invalid).isOccupied());
     }
 
     @Test
     void outOfRangeIdIsJustInvalid() {
-        readyGame();
+        Player ann = readyGame().getCurrentPlayer();
+        PlayerState before = PlayerState.of(ann);
         interactor.execute(new BuildInputData(StructureType.SETTLEMENT, 999));
         assertTrue(presenter.error.startsWith("A settlement must go"));
         interactor.execute(new BuildInputData(StructureType.ROAD, -5));
         assertTrue(presenter.error.startsWith("A road must go"));
+        assertUnchanged(before, ann);
     }
 
     @Test
@@ -121,8 +143,10 @@ class BuildInteractorTest {
         Game game = TestGames.playingGame(4, "Ann", "Bob");
         game.markRolled();
         repo.game = game;
+        PlayerState before = PlayerState.of(game.getCurrentPlayer());
         interactor.execute(new BuildInputData(StructureType.SETTLEMENT, 0));
         assertEquals("Not enough resources. A settlement costs 1 lumber, 1 brick, 1 grain, 1 wool.", presenter.error);
+        assertUnchanged(before, game.getCurrentPlayer());
     }
 
     @Test
@@ -160,7 +184,10 @@ class BuildInteractorTest {
     @Test
     void cityOnOpponentOrEmptyVertexIsRejected() {
         Game game = readyGame();
+        Player ann = game.getCurrentPlayer();
         Player bob = game.getPlayers().get(1);
+        PlayerState annBefore = PlayerState.of(ann);
+        PlayerState bobBefore = PlayerState.of(bob);
         int bobs = bob.getBuildings().get(0).getLocation().getId();
         interactor.execute(new BuildInputData(StructureType.CITY, bobs));
         assertEquals("A city can only be built by upgrading one of your own settlements.", presenter.error);
@@ -170,6 +197,8 @@ class BuildInteractorTest {
         }
         interactor.execute(new BuildInputData(StructureType.CITY, empty));
         assertNotNull(presenter.error);
+        assertUnchanged(annBefore, ann);
+        assertUnchanged(bobBefore, bob);
     }
 
     @Test
