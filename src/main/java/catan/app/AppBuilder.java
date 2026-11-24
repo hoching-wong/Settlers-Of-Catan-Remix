@@ -2,6 +2,7 @@ package catan.app;
 
 import catan.entity.CityLocation;
 import catan.framework.persistence.InMemoryGameRepository;
+import catan.framework.weather.OpenMeteoWeatherDataAccessObject;
 import catan.framework.ui.swing.GameOverView;
 import catan.framework.ui.swing.GameView;
 import catan.framework.ui.swing.ScreenSwitcher;
@@ -48,10 +49,15 @@ public class AppBuilder {
     private PlaceInitialController placeInitialController;
     private GameOverPresenter gameOverPresenter;
 
-    /** The application as it runs: a random board, in-memory storage and no weather service yet. */
+
+    /**
+     * Creates the application with the Open-Meteo weather service.
+     */
     public AppBuilder() {
-        this(new Random(), new WeatherNotConnected(), new InMemoryGameRepository(), daemonExecutor());
+        this(new Random(), new OpenMeteoWeatherDataAccessObject(),
+                new InMemoryGameRepository(), daemonExecutor());
     }
+
 
     /** For tests and for plugging in the real weather gateway. */
     public AppBuilder(Random random, WeatherGateway weatherGateway, GameRepository gameRepository,

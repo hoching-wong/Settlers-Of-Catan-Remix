@@ -1,7 +1,8 @@
-package catan.dataaccess;
+package catan.framework.weather;
 
 import catan.entity.CityLocation;
-import catan.usecase.weather.WeatherDataAccessInterface;
+import catan.usecase.port.WeatherGateway;
+import catan.usecase.port.WeatherUnavailableException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,7 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Retrieves current weather codes from the Open-Meteo Weather API. */
-public class OpenMeteoWeatherDataAccessObject implements WeatherDataAccessInterface {
+public class OpenMeteoWeatherDataAccessObject implements WeatherGateway {
 
   private static final String API_URL = "https://api.open-meteo.com/v1/forecast";
   private static final int TIMEOUT_SECONDS = 10;
@@ -30,10 +31,12 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherDataAccessInterf
    * Retrieves the current WMO weather code for the selected city.
    *
    * @param city the city whose weather should be retrieved
-   * @return the weather code, or an empty result if the request fails
+   * @return the current WMO weather code
+   * @throws WeatherUnavailableException if the weather cannot be retrieved
    */
   @Override
-  public OptionalInt getWeatherCode(CityLocation city) {
+  public int fetchWeatherCode(CityLocation city) throws WeatherUnavailableException {
+
     String url =
         API_URL
             + "?latitude="
@@ -53,17 +56,23 @@ public class OpenMeteoWeatherDataAccessObject implements WeatherDataAccessInterf
       HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() != SUCCESS_STATUS_CODE) {
-        return OptionalInt.empty();
+        throw new WeatherUnavailableException("Weather API returned HTTP " + response.statusCode());
       }
 
-      return parseWeatherCode(response.body());
+      OptionalInt weatherCode = parseWeatherCode(response.body());
+
+      if (weatherCode.isEmpty()) {
+        throw new WeatherUnavailableException("Invalid weather API response");
+      }
+
+      return weatherCode.getAsInt();
 
     } catch (IOException | IllegalArgumentException exception) {
-      return OptionalInt.empty();
+      throw new WeatherUnavailableException("Failed to retrieve weather data", exception);
 
     } catch (InterruptedException exception) {
       Thread.currentThread().interrupt();
-      return OptionalInt.empty();
+      throw new WeatherUnavailableException("Weather request interrupted", exception);
     }
   }
 

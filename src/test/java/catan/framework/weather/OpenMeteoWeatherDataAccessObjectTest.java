@@ -1,10 +1,11 @@
-package catan.dataaccess;
+package catan.framework.weather;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.OptionalInt;
+
 import org.junit.jupiter.api.Test;
 
 /** Tests JSON parsing in the Open-Meteo weather data access object. */

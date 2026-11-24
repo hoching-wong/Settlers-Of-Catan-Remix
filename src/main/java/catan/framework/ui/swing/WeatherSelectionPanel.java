@@ -1,4 +1,4 @@
-package catan.view.weather;
+package catan.framework.ui.swing;
 
 import catan.entity.CityLocation;
 import catan.interfaceadapters.weather.WeatherController;

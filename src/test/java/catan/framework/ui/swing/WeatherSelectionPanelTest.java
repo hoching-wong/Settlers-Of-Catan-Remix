@@ -1,4 +1,4 @@
-package catan.view.weather;
+package catan.framework.ui.swing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
