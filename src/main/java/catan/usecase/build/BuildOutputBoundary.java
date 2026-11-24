@@ -1,4 +1,4 @@
-package usecase.build;
+package catan.usecase.build;
 
 /** Implemented by the presenter that shows the result of a build. */
 public interface BuildOutputBoundary {

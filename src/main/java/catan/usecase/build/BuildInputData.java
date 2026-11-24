@@ -1,6 +1,6 @@
-package usecase.build;
+package catan.usecase.build;
 
-import entity.StructureType;
+import catan.entity.StructureType;
 
 /**
  * @param structure  what to build

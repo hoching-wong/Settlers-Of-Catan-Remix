@@ -1,16 +1,16 @@
-package usecase.build;
+package catan.usecase.build;
 
-import entity.BuildCost;
-import entity.Game;
-import entity.Player;
-import entity.ResourceType;
-import usecase.boardstate.BoardSnapshot;
-import usecase.build.placement.PlacementStrategies;
-import usecase.build.placement.PlacementStrategy;
-import usecase.build.rules.BuildRequest;
-import usecase.build.rules.BuildRule;
-import usecase.build.rules.BuildRules;
-import usecase.port.GameRepository;
+import catan.entity.BuildCost;
+import catan.entity.Game;
+import catan.entity.Player;
+import catan.entity.ResourceType;
+import catan.usecase.boardstate.BoardSnapshot;
+import catan.usecase.build.placement.PlacementStrategies;
+import catan.usecase.build.placement.PlacementStrategy;
+import catan.usecase.build.rules.BuildRequest;
+import catan.usecase.build.rules.BuildRule;
+import catan.usecase.build.rules.BuildRules;
+import catan.usecase.port.GameRepository;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -41,7 +41,7 @@ public class BuildInteractor implements BuildInputBoundary {
 
     @Override
     public void execute(BuildInputData inputData) {
-        Game game = repository.getGame();
+        Game game = repository.get();
         if (game == null) {
             presenter.prepareFailView("No game is in progress.");
             return;
@@ -59,7 +59,7 @@ public class BuildInteractor implements BuildInputBoundary {
 
         Player holder = game.updateLongestRoadHolder();
         boolean gameOver = game.checkVictory();
-        repository.saveGame(game);
+        repository.save(game);
 
         presenter.prepareSuccessView(new BuildOutputData(
                 inputData.structure().name(),

@@ -1,6 +1,6 @@
-package usecase.build;
+package catan.usecase.build;
 
-import usecase.boardstate.BoardSnapshot;
+import catan.usecase.boardstate.BoardSnapshot;
 import java.util.Map;
 
 /**
