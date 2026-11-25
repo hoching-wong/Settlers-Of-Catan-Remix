@@ -11,6 +11,7 @@ import catan.entity.SetupStep;
 import catan.entity.Settlement;
 import catan.entity.Tile;
 import catan.entity.Vertex;
+import catan.usecase.boardstate.BoardSnapshot;
 import catan.usecase.port.GameRepository;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -78,7 +79,8 @@ public class PlaceInitialInteractor implements PlaceInitialInputBoundary {
 
         outputBoundary.presentPlacement(new PlaceInitialOutputData(
                 SetupStep.SETTLEMENT, player.getName(), vertexId, gained,
-                false, game.getCurrentPlayer().getName(), game.getSetupStep()));
+                false, game.getCurrentPlayer().getName(), game.getSetupStep(),
+                BoardSnapshot.of(board, game.getPlayers())));
     }
 
     private void placeRoad(Game game, int edgeId) {
@@ -104,7 +106,8 @@ public class PlaceInitialInteractor implements PlaceInitialInputBoundary {
         boolean setupComplete = game.getPhase() == GamePhase.PLAYING;
         outputBoundary.presentPlacement(new PlaceInitialOutputData(
                 SetupStep.ROAD, player.getName(), edgeId, Map.of(),
-                setupComplete, game.getCurrentPlayer().getName(), game.getSetupStep()));
+                setupComplete, game.getCurrentPlayer().getName(), game.getSetupStep(),
+                BoardSnapshot.of(board, game.getPlayers())));
     }
 
     /**
