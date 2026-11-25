@@ -18,6 +18,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
 
 /**
  * The board with its build menu (Road, Settlement, City) and a message line.
@@ -124,6 +125,15 @@ public class BoardView extends JPanel implements PropertyChangeListener, BoardCl
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
+        // Presenters may run on a background thread (the game start), so update on the Swing thread.
+        if (SwingUtilities.isEventDispatchThread()) {
+            refresh();
+        } else {
+            SwingUtilities.invokeLater(this::refresh);
+        }
+    }
+
+    private void refresh() {
         BoardState state = viewModel.getState();
         String selected = state.getSelectedStructure();
         if (selected == null) {

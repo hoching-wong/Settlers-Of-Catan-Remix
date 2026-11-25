@@ -1,5 +1,7 @@
 package catan.interfaceadapter.presenter;
 
+import catan.interfaceadapter.viewmodel.BoardState;
+import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
@@ -12,15 +14,33 @@ public class StartGamePresenter implements StartGameOutputBoundary {
     private final StartMenuViewModel startMenu;
     private final GameViewModel game;
     private final ViewManagerModel viewManager;
+    private final BoardViewModel board;
     private final LongestRoadViewModel longestRoadViewModel;
+
+    /** For a screen without a board view. */
+    public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager) {
+        this(startMenu, game, viewManager, new BoardViewModel());
+    }
+
+    /** @param board told that the first click on the board places Player 1's first settlement */
+    public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager,
+                              BoardViewModel board) {
+        this(startMenu, game, viewManager, board, new LongestRoadViewModel());
+    }
 
     public StartGamePresenter(StartMenuViewModel startMenu,
                               GameViewModel game,
                               ViewManagerModel viewManager,
                               LongestRoadViewModel longestRoadViewModel) {
+        this(startMenu, game, viewManager, new BoardViewModel(), longestRoadViewModel);
+    }
+
+    public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager,
+                              BoardViewModel board, LongestRoadViewModel longestRoadViewModel) {
         this.startMenu = Objects.requireNonNull(startMenu, "startMenu");
         this.game = Objects.requireNonNull(game, "game");
         this.viewManager = Objects.requireNonNull(viewManager, "viewManager");
+        this.board = Objects.requireNonNull(board, "board");
         this.longestRoadViewModel = Objects.requireNonNull(
                 longestRoadViewModel, "longestRoadViewModel");
     }
@@ -32,6 +52,9 @@ public class StartGamePresenter implements StartGameOutputBoundary {
         startMenu.setGameStarted(out.playerNames(), out.cityName(), weatherText, bonusText);
         game.startGame(out.playerNames(), out.playerNames().get(0), Text.PLACE_SETTLEMENT);
         game.setWeather(weatherText, bonusText);
+        board.getState().clearSelection();
+        board.getState().setSetupTarget(BoardState.VERTEX);
+        board.firePropertyChanged();
 
         longestRoadViewModel.updateState(null, 0);
 

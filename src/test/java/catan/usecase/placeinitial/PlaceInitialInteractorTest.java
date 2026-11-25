@@ -286,6 +286,34 @@ class PlaceInitialInteractorTest {
         assertTrue(out.resourcesGained().isEmpty());
     }
 
+    // ---- the board snapshot for redrawing ----
+
+    @Test
+    void eachPlacementCarriesTheBoardAsItIsNow() {
+        Game game = newGame(2);
+        Vertex spot = findSpot(game, v -> true);
+        place(spot.getId());
+        var afterSettlement = presenter.last().board();
+        assertEquals(19, afterSettlement.tiles().size());
+        assertEquals("SETTLEMENT", afterSettlement.vertices().get(spot.getId()).building());
+        assertEquals(0, afterSettlement.vertices().get(spot.getId()).ownerIndex());
+
+        Edge edge = findRoadSpot(game);
+        place(edge.getId());
+        var afterRoad = presenter.last().board();
+        assertEquals(0, afterRoad.edges().get(edge.getId()).ownerIndex());
+        assertEquals(1, afterRoad.edges().stream().filter(e -> e.ownerIndex() >= 0).count());
+    }
+
+    @Test
+    void theSnapshotNamesTheSecondPlayerByTheirIndex() {
+        Game game = newGame(2);
+        takeTurn(game);
+        Vertex spot = findSpot(game, v -> true);
+        place(spot.getId());
+        assertEquals(1, presenter.last().board().vertices().get(spot.getId()).ownerIndex());
+    }
+
     @Test
     void aRoadAwayFromTheSettlementIsRefused() {
         Game game = newGame(2);
