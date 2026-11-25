@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import catan.entity.ResourceType;
 import catan.entity.WeatherType;
+import catan.interfaceadapter.viewmodel.BoardState;
+import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
@@ -17,6 +19,32 @@ class StartGamePresenterTest {
     private final GameViewModel game = new GameViewModel();
     private final ViewManagerModel viewManager = new ViewManagerModel();
     private final StartGamePresenter presenter = new StartGamePresenter(startMenu, game, viewManager);
+
+    @Test
+    void theFirstClickOnTheBoardPlacesASettlement() {
+        BoardViewModel board = new BoardViewModel();
+        board.getState().select("ROAD", BoardState.EDGE, java.util.Set.of(3));
+        int[] fired = {0};
+        board.addPropertyChangeListener(e -> fired[0]++);
+        new StartGamePresenter(startMenu, game, viewManager, board).presentGameStarted(new StartGameOutputData(
+                List.of("Ann", "Bob"), "Toronto", true, WeatherType.SUNNY, ResourceType.LUMBER, 2));
+
+        assertEquals(BoardState.VERTEX, board.getState().getSetupTarget());
+        assertNull(board.getState().getSelectedStructure(), "no build left over from an earlier game");
+        assertEquals(1, fired[0]);
+    }
+
+    @Test
+    void anErrorLeavesTheBoardAlone() {
+        BoardViewModel board = new BoardViewModel();
+        new StartGamePresenter(startMenu, game, viewManager, board).presentError("Please select a city.");
+        assertNull(board.getState().getSetupTarget());
+    }
+
+    @Test
+    void rejectsANullBoardViewModel() {
+        assertThrows(NullPointerException.class, () -> new StartGamePresenter(startMenu, game, viewManager, null));
+    }
 
     @Test
     void aSunnyStartShowsTheBonusAndMovesToTheGameScreen() {
