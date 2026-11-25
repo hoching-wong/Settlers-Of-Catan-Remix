@@ -1,29 +1,44 @@
 package catan.app;
 
+import catan.entity.BalancedLayoutStrategy;
 import catan.entity.CityLocation;
+import catan.framework.persistence.InMemoryBoardRepository;
 import catan.framework.persistence.InMemoryGameRepository;
+import catan.framework.ui.swing.BoardView;
 import catan.framework.ui.swing.GameOverView;
 import catan.framework.ui.swing.GameView;
+import catan.framework.ui.swing.InitialPlacementClickListener;
 import catan.framework.ui.swing.ScreenSwitcher;
 import catan.framework.ui.swing.StartMenuView;
 import catan.framework.weather.OpenMeteoWeatherDataAccessObject;
+import catan.interfaceadapter.controller.BuildController;
 import catan.interfaceadapter.controller.EndTurnController;
+import catan.interfaceadapter.controller.GenerateBoardController;
 import catan.interfaceadapter.controller.PlaceInitialController;
 import catan.interfaceadapter.controller.RestartGameController;
+import catan.interfaceadapter.controller.SelectStructureController;
 import catan.interfaceadapter.controller.StartGameController;
+import catan.interfaceadapter.presenter.BuildPresenter;
 import catan.interfaceadapter.presenter.EndTurnPresenter;
 import catan.interfaceadapter.presenter.GameOverPresenter;
+import catan.interfaceadapter.presenter.GenerateBoardPresenter;
 import catan.interfaceadapter.presenter.PlaceInitialPresenter;
 import catan.interfaceadapter.presenter.RestartGamePresenter;
+import catan.interfaceadapter.presenter.SelectStructurePresenter;
 import catan.interfaceadapter.presenter.StartGamePresenter;
+import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
+import catan.usecase.build.BuildInteractor;
 import catan.usecase.endturn.EndTurnInteractor;
+import catan.usecase.generateboard.GenerateBoardInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
+import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
 import catan.usecase.restartgame.RestartGameInteractor;
+import catan.usecase.selectstructure.SelectStructureInteractor;
 import catan.usecase.startgame.StartGameInteractor;
 import catan.usecase.weather.WeatherDataAccessInterface;
 import java.awt.Dimension;
@@ -46,6 +61,7 @@ public class AppBuilder {
     private final Executor backgroundExecutor;
 
     private GameView gameView;
+    private BoardViewModel boardViewModel;
     private PlaceInitialController placeInitialController;
     private GameOverPresenter gameOverPresenter;
 
@@ -94,19 +110,23 @@ public class AppBuilder {
         GameViewModel game = new GameViewModel();
         GameOverViewModel gameOver = new GameOverViewModel();
         ViewManagerModel viewManager = new ViewManagerModel();
+        boardViewModel = new BoardViewModel();
+        BoardRepository boardRepository = new InMemoryBoardRepository();
 
-        StartGameController startGame = new StartGameController(
-                new StartGameInteractor(
-                        gameRepository,
-                        weatherDataAccessObject,
-                        new StartGamePresenter(startMenu, game, viewManager),
-                        random));
-
+        // UC8: Start Game generates the board, and the game is then played on that same board.
+        GenerateBoardController generateBoard = new GenerateBoardController(new GenerateBoardInteractor(
+                gameRepository, boardRepository, new GenerateBoardPresenter(boardViewModel),
+                new BalancedLayoutStrategy()));
+        StartGameController startGame = new StartGameController(new StartGameInteractor(
+                gameRepository, weatherDataAccessObject, new StartGamePresenter(startMenu, game, viewManager, boardViewModel),
+                random, boardRepository));
         placeInitialController = new PlaceInitialController(
-                new PlaceInitialInteractor(
-                        gameRepository,
-                        new PlaceInitialPresenter(game)));
-
+                new PlaceInitialInteractor(gameRepository, new PlaceInitialPresenter(game, boardViewModel)));
+        // UC1: the build menu highlights where a structure can go, and a click there builds it.
+        SelectStructureController selectStructure = new SelectStructureController(
+                new SelectStructureInteractor(gameRepository, new SelectStructurePresenter(boardViewModel)));
+        BuildController build = new BuildController(
+                new BuildInteractor(gameRepository, new BuildPresenter(boardViewModel)));
         EndTurnController endTurn = new EndTurnController(
                 new EndTurnInteractor(
                         gameRepository,
@@ -120,16 +140,19 @@ public class AppBuilder {
 
         gameOverPresenter = new GameOverPresenter(gameOver, viewManager);
 
-        StartMenuView startMenuView = new StartMenuView(
-                startMenu, startGame, backgroundExecutor);
+        StartMenuView startMenuView = new StartMenuView(startMenu, startGame, backgroundExecutor);
+        startMenuView.setGenerateBoardController(generateBoard);
+
+        BoardView boardView = new BoardView(boardViewModel);
+        boardView.setSelectStructureController(selectStructure);
+        boardView.setBuildController(build);
+        boardView.getBoardPanel().addClickListener(
+                new InitialPlacementClickListener(boardViewModel, placeInitialController));
 
         gameView = new GameView(game, endTurn);
-
-        GameOverView gameOverView = new GameOverView(
-                gameOver, restartGame);
-
-        return new ScreenSwitcher(
-                viewManager, startMenuView, gameView, gameOverView);
+        gameView.setBoardComponent(boardView);
+        GameOverView gameOverView = new GameOverView(gameOver, restartGame);
+        return new ScreenSwitcher(viewManager, startMenuView, gameView, gameOverView);
     }
 
     /**
@@ -141,8 +164,8 @@ public class AppBuilder {
         JFrame frame = new JFrame("Settlers of Catan Remix");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setContentPane(buildScreens());
-        frame.setMinimumSize(new Dimension(640, 560));
-        frame.setPreferredSize(new Dimension(960, 680));
+        frame.setMinimumSize(new Dimension(720, 680));
+        frame.setPreferredSize(new Dimension(1000, 860));
         frame.pack();
         frame.setLocationRelativeTo(null);
         return frame;
@@ -157,11 +180,12 @@ public class AppBuilder {
         return requireBuilt(gameView);
     }
 
-    /**
-     * Returns the initial placement controller.
-     *
-     * @return the initial placement controller
-     */
+    /** What presenters that change the board update so the board view redraws. */
+    public BoardViewModel getBoardViewModel() {
+        return requireBuilt(boardViewModel);
+    }
+
+    /** What the board view calls when a vertex or edge is clicked during setup. */
     public PlaceInitialController getPlaceInitialController() {
         return requireBuilt(placeInitialController);
     }

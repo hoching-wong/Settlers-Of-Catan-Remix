@@ -2,6 +2,7 @@ package catan.framework.ui.swing;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import catan.interfaceadapter.controller.GenerateBoardController;
 import catan.interfaceadapter.controller.StartGameController;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.usecase.startgame.StartGameInputData;
@@ -205,6 +206,40 @@ class StartMenuViewTest {
         flush();
         assertTrue(button.isEnabled());
         assertEquals("Start Game", button.getText());
+    }
+
+    // ---- generating the board (UC8) ----
+
+    @Test
+    void startGameGeneratesTheBoardFirstAndThenStartsTheGame() {
+        List<String> calls = new ArrayList<>();
+        StartMenuView withBoard = new StartMenuView(viewModel,
+                new StartGameController(data -> calls.add("start")), Runnable::run);
+        withBoard.setGenerateBoardController(new GenerateBoardController(data -> {
+            assertNull(data.seed(), "a different board every game");
+            calls.add("generate");
+        }));
+        find(withBoard, "city", JComboBox.class).setSelectedItem("Toronto");
+        find(withBoard, "start", JButton.class).doClick();
+        assertEquals(List.of("generate", "start"), calls);
+    }
+
+    @Test
+    void eachPressGeneratesANewBoard() {
+        int[] generated = {0};
+        view.setGenerateBoardController(new GenerateBoardController(data -> generated[0]++));
+        startButton().doClick();
+        flush(); // the button comes back on the Swing thread
+        startButton().doClick();
+        assertEquals(2, generated[0]);
+        assertEquals(2, started.size());
+    }
+
+    @Test
+    void withoutABoardControllerTheGameStillStarts() {
+        cityBox().setSelectedItem("Toronto");
+        startButton().doClick();
+        assertEquals(1, started.size());
     }
 
     // ---- reacting to the view model ----

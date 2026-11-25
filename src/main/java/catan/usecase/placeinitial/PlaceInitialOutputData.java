@@ -2,6 +2,7 @@ package catan.usecase.placeinitial;
 
 import catan.entity.ResourceType;
 import catan.entity.SetupStep;
+import catan.usecase.boardstate.BoardSnapshot;
 import java.util.Map;
 
 /**
@@ -15,6 +16,7 @@ import java.util.Map;
  * @param setupComplete true once the last road is placed and regular play has begun
  * @param nextPlayerName the player whose turn it is now (Player 1 once setup is complete)
  * @param nextStep what is expected next, or null once setup is complete
+ * @param board the board after the placement, for redrawing
  */
 public record PlaceInitialOutputData(
         SetupStep placed,
@@ -23,5 +25,6 @@ public record PlaceInitialOutputData(
         Map<ResourceType, Integer> resourcesGained,
         boolean setupComplete,
         String nextPlayerName,
-        SetupStep nextStep) {
+        SetupStep nextStep,
+        BoardSnapshot board) {
 }

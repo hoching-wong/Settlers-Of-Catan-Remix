@@ -1,5 +1,6 @@
 package catan.framework.ui.swing;
 
+import catan.interfaceadapter.controller.GenerateBoardController;
 import catan.interfaceadapter.controller.StartGameController;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import java.awt.Color;
@@ -37,6 +38,7 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
     private final StartMenuViewModel viewModel;
     private final StartGameController controller;
     private final Executor backgroundExecutor;
+    private GenerateBoardController generateBoardController;
 
     private final JComboBox<Integer> playerCountBox = new JComboBox<>();
     private final JLabel[] nameLabels = new JLabel[MAX_PLAYERS];
@@ -221,12 +223,23 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
     }
 
     /**
+     * Start Game first generates a new board (use case 8), then starts the game on it.
+     * Without this controller the start game use case makes the board itself.
+     */
+    public void setGenerateBoardController(GenerateBoardController generateBoardController) {
+        this.generateBoardController = generateBoardController;
+    }
+
+    /**
      * Starts a game using the selected players and city.
      */
     private void startGame() {
         List<String> names = getEnteredNames();
         String city = getSelectedCity();
 
+        if (generateBoardController != null) {
+            generateBoardController.execute();
+        }
         startButton.setEnabled(false);
         startButton.setText(STARTING_TEXT);
 

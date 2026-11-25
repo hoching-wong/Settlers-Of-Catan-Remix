@@ -2,6 +2,7 @@ package catan.usecase.startgame;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import catan.entity.Board;
 import catan.entity.BoardFactory;
 import catan.entity.City;
 import catan.entity.CityLocation;
@@ -18,6 +19,7 @@ import catan.entity.Tile;
 import catan.entity.Vertex;
 import catan.entity.WeatherData;
 import catan.entity.WeatherType;
+import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
 import catan.usecase.weather.WeatherDataAccessInterface;
 import catan.usecase.weather.WeatherUnavailableException;
@@ -83,6 +85,20 @@ class StartGameInteractorTest {
         @Override
         public void presentError(String message) {
             errors.add(message);
+        }
+    }
+
+    private static class FakeBoardRepository implements BoardRepository {
+        Board board;
+
+        @Override
+        public void saveBoard(Board board) {
+            this.board = board;
+        }
+
+        @Override
+        public Board getBoard() {
+            return board;
         }
     }
 
@@ -437,6 +453,49 @@ class StartGameInteractorTest {
         Game expected = new Game(BoardFactory.createStandardBoard(new Random(9)),
                 List.of(new Player("x"), new Player("y")), WeatherData.none(), new Dice(new Random(9)));
         assertEquals(layout(expected), layout(repo.get()));
+    }
+
+    // ---- the generated board (UC8) ----
+
+    @Test
+    void theGameIsPlayedOnTheGeneratedBoard() {
+        FakeBoardRepository boards = new FakeBoardRepository();
+        Board generated = BoardFactory.createStandardBoard(new Random(3));
+        boards.saveBoard(generated);
+        StartGameInteractor withBoards =
+                new StartGameInteractor(repository, weather, presenter, new Random(1), boards);
+
+        withBoards.startGame(new StartGameInputData(List.of("Ann", "Bob"), "Toronto"));
+
+        assertSame(generated, repository.get().getBoard());
+        assertNull(boards.getBoard(), "a board is used for one game only");
+    }
+
+    @Test
+    void withoutAGeneratedBoardARandomOneIsMade() {
+        FakeBoardRepository boards = new FakeBoardRepository();
+        new StartGameInteractor(repository, weather, presenter, new Random(9), boards)
+                .startGame(new StartGameInputData(List.of("Ann", "Bob"), "Toronto"));
+        Game expected = new Game(BoardFactory.createStandardBoard(new Random(9)),
+                List.of(new Player("x"), new Player("y")), WeatherData.none(), new Dice(new Random(9)));
+        assertEquals(layout(expected), layout(repository.get()));
+    }
+
+    @Test
+    void aRejectedStartKeepsTheGeneratedBoard() {
+        FakeBoardRepository boards = new FakeBoardRepository();
+        Board generated = BoardFactory.createStandardBoard(new Random(3));
+        boards.saveBoard(generated);
+        new StartGameInteractor(repository, weather, presenter, new Random(1), boards)
+                .startGame(new StartGameInputData(List.of("Ann", "Ann"), "Toronto"));
+        assertEquals(1, presenter.errors.size());
+        assertSame(generated, boards.getBoard());
+    }
+
+    @Test
+    void rejectsANullBoardRepository() {
+        assertThrows(NullPointerException.class,
+                () -> new StartGameInteractor(repository, weather, presenter, new Random(), null));
     }
 
     @Test
