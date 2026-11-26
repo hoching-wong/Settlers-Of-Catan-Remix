@@ -1,6 +1,7 @@
 package catan.framework.ui.swing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import catan.entity.BoardFactory;
@@ -10,11 +11,11 @@ import catan.entity.Player;
 import catan.entity.ResourceType;
 import catan.entity.WeatherData;
 import catan.framework.persistence.InMemoryGameRepository;
-import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.controller.ViewGameStatusController;
 import catan.interfaceadapter.presenter.ViewGameStatusPresenter;
 import catan.interfaceadapter.viewmodel.GameStatusViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.usecase.viewgamestatus.ViewGameStatusInteractor;
 import java.awt.Component;
 import java.awt.Container;
@@ -34,7 +35,7 @@ class GameStatusIntegrationTest {
   private GameStatusPanel statusPanel;
   private Player alice;
 
-  /** Connects the UC5 components before each test. */
+  /** Connects the game status components before each test. */
   @BeforeEach
   void setUp() {
     repository = new InMemoryGameRepository();
@@ -47,8 +48,7 @@ class GameStatusIntegrationTest {
 
     ViewGameStatusController controller = new ViewGameStatusController(interactor);
 
-    StartMenuViewModel startMenuViewModel =
-            new StartMenuViewModel(List.of("Toronto"));
+    StartMenuViewModel startMenuViewModel = new StartMenuViewModel(List.of("Toronto"));
 
     statusPanel = new GameStatusPanel(statusViewModel, startMenuViewModel);
 
@@ -80,9 +80,9 @@ class GameStatusIntegrationTest {
   }
 
   /**
-   * Tests that starting a game displays the initial status.
+   * Tests that starting a game displays the initial game status.
    *
-   * @throws Exception if the Swing event thread is interrupted
+   * @throws Exception if the Swing event thread operation fails
    */
   @Test
   void gameStartUpdatesStatusPanel() throws Exception {
@@ -97,19 +97,31 @@ class GameStatusIntegrationTest {
 
     List<String> labels = getLabelTexts(statusPanel);
 
-    assertTrue(labels.contains("Alice (Current Turn)"));
-    assertTrue(labels.contains("Victory Points: 0"));
-    assertTrue(labels.contains("LUMBER: 3"));
-    assertTrue(labels.contains("BRICK: 2"));
-    assertTrue(labels.contains("Weather: Sunny"));
-    assertTrue(labels.contains("Bonus: Lumber x2"));
+    assertTrue(labels.contains("Game Overview"));
+    assertTrue(labels.contains("Sunny"));
+    assertTrue(labels.contains("Weather Bonus"));
+    assertTrue(labels.contains("Lumber ×2"));
+
+    Component aliceCard = findNamedComponent(statusPanel, "player-card-Alice");
+
+    assertNotNull(aliceCard);
+
+    List<String> aliceLabels = getLabelTexts(aliceCard);
+
+    assertTrue(aliceLabels.contains("Alice"));
+    assertTrue(aliceLabels.contains("Current Turn"));
+    assertTrue(aliceLabels.contains("Victory Points"));
+
+    assertLabelValue(aliceCard, "victory-points-value", "0");
+
+    assertResourceCount(aliceCard, "LUMBER", "Lumber", 3);
+    assertResourceCount(aliceCard, "BRICK", "Brick", 2);
   }
 
   /**
-   * Tests that changing resources and sending a game event refreshes the status panel
-   * automatically.
+   * Tests that a resource change refreshes the game status panel.
    *
-   * @throws Exception if the Swing event thread is interrupted
+   * @throws Exception if the Swing event thread operation fails
    */
   @Test
   void resourceChangeRefreshesStatusPanel() throws Exception {
@@ -129,33 +141,99 @@ class GameStatusIntegrationTest {
     SwingUtilities.invokeAndWait(() -> {});
 
     assertEquals(2, statusViewModel.getPlayers().get(0).resources().get("LUMBER"));
+
     assertEquals(1, statusViewModel.getPlayers().get(0).resources().get("BRICK"));
 
-    List<String> labels = getLabelTexts(statusPanel);
+    Component aliceCard = findNamedComponent(statusPanel, "player-card-Alice");
 
-    assertTrue(labels.contains("LUMBER: 2"));
-    assertTrue(labels.contains("BRICK: 1"));
+    assertNotNull(aliceCard);
+
+    assertResourceCount(aliceCard, "LUMBER", "Lumber", 2);
+    assertResourceCount(aliceCard, "BRICK", "Brick", 1);
+  }
+
+  /**
+   * Checks the resource name and count in a player's resource block.
+   *
+   * @param card the player card
+   * @param resource the resource identifier
+   * @param displayName the displayed resource name
+   * @param count the expected resource count
+   */
+  private static void assertResourceCount(
+      Component card, String resource, String displayName, int count) {
+
+    Component block = findNamedComponent(card, "resource-" + resource);
+
+    assertNotNull(block);
+    assertTrue(getLabelTexts(block).contains(displayName));
+
+    assertLabelValue(block, "resource-count", String.valueOf(count));
+  }
+
+  /**
+   * Checks the text of a named label.
+   *
+   * @param parent the parent component
+   * @param name the component name
+   * @param expected the expected label text
+   */
+  private static void assertLabelValue(Component parent, String name, String expected) {
+
+    Component component = findNamedComponent(parent, name);
+
+    assertTrue(component instanceof JLabel);
+    assertEquals(expected, ((JLabel) component).getText());
+  }
+
+  /**
+   * Finds a named component recursively within a component tree.
+   *
+   * @param component the component to search
+   * @param name the component name
+   * @return the matching component, or null if not found
+   */
+  private static Component findNamedComponent(Component component, String name) {
+
+    if (name.equals(component.getName())) {
+      return component;
+    }
+
+    if (component instanceof Container container) {
+      for (Component child : container.getComponents()) {
+        Component found = findNamedComponent(child, name);
+
+        if (found != null) {
+          return found;
+        }
+      }
+    }
+
+    return null;
   }
 
   /**
    * Collects the text of all labels inside a Swing component.
    *
-   * @param component the component to inspect
-   * @return the text displayed by its labels
+   * @param component the component to search
+   * @return the collected label texts
    */
   private static List<String> getLabelTexts(Component component) {
     List<String> texts = new ArrayList<>();
+
     collectLabelTexts(component, texts);
+
     return texts;
   }
 
   /**
    * Recursively collects label text from nested components.
    *
-   * @param component the current component
-   * @param texts the list receiving label text
+   * @param component the component to search
+   * @param texts the list containing collected label texts
    */
   private static void collectLabelTexts(Component component, List<String> texts) {
+
     if (component instanceof JLabel label) {
       texts.add(label.getText());
     }
