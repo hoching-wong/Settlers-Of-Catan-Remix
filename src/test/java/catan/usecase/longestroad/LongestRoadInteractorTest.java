@@ -13,6 +13,7 @@ import catan.entity.Edge;
 import catan.entity.Game;
 import catan.entity.Player;
 import catan.entity.Road;
+import catan.entity.Settlement;
 import catan.entity.Vertex;
 import catan.entity.WeatherData;
 import java.util.ArrayList;
@@ -235,5 +236,63 @@ class LongestRoadInteractorTest {
     assertEquals("Bob", secondOutput.holderName());
     assertEquals(6, secondOutput.roadLength());
     assertSame(second.bob, second.game.getLongestRoadHolder());
+  }
+
+  @Test
+  void blockedRoadRemovesHolderAndBonus() {
+    TestGame data = new TestGame();
+
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor();
+
+    data.addRoads(data.alice, 0, 6);
+
+    LongestRoadOutputData firstOutput =
+            interactor.execute(new LongestRoadInputData(data.game));
+
+    assertEquals("Alice", firstOutput.holderName());
+    assertEquals(6, firstOutput.roadLength());
+    assertSame(data.alice, data.game.getLongestRoadHolder());
+    assertTrue(data.alice.hasLongestRoad());
+    assertEquals(2, data.alice.getVictoryPoints());
+
+    Vertex blockingVertex = data.board.getVertex(3);
+
+    data.board.placeBuilding(
+            blockingVertex,
+            new Settlement(data.bob, blockingVertex));
+
+    LongestRoadOutputData outputData =
+            interactor.execute(new LongestRoadInputData(data.game));
+
+    assertNull(outputData.holderName());
+    assertEquals(0, outputData.roadLength());
+    assertNull(data.game.getLongestRoadHolder());
+    assertFalse(data.alice.hasLongestRoad());
+    assertFalse(data.bob.hasLongestRoad());
+    assertEquals(0, data.alice.getVictoryPoints());
+    assertEquals(1, data.bob.getVictoryPoints());
+  }
+
+  @Test
+  void tieWithoutCurrentHolderReturnsNoHolder() {
+    TestGame data = new TestGame();
+
+    data.addRoads(data.alice, 0, 5);
+    data.addRoads(data.bob, 11, 5);
+
+    LongestRoadInteractor interactor =
+            new LongestRoadInteractor();
+
+    LongestRoadOutputData outputData =
+            interactor.execute(new LongestRoadInputData(data.game));
+
+    assertNull(outputData.holderName());
+    assertEquals(0, outputData.roadLength());
+    assertNull(data.game.getLongestRoadHolder());
+    assertFalse(data.alice.hasLongestRoad());
+    assertFalse(data.bob.hasLongestRoad());
+    assertEquals(0, data.alice.getVictoryPoints());
+    assertEquals(0, data.bob.getVictoryPoints());
   }
 }
