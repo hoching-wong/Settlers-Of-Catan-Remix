@@ -30,14 +30,4 @@ public class LongestRoadPresenter implements LongestRoadOutputBoundary {
 
     viewModel.updateState(outputData.holderName(), outputData.roadLength());
   }
-
-  /**
-   * Presents Longest Road information using individual values.
-   *
-   * @param holderName the holder's name, or null
-   * @param roadLength the holder's road length
-   */
-  public void present(String holderName, int roadLength) {
-    present(new LongestRoadOutputData(holderName, roadLength));
-  }
 }

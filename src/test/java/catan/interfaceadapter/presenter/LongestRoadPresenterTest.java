@@ -19,7 +19,7 @@ class LongestRoadPresenterTest {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
     LongestRoadPresenter presenter = new LongestRoadPresenter(viewModel);
 
-    presenter.present("Alice", 6);
+    presenter.present(new LongestRoadOutputData("Alice", 6));
 
     assertEquals("Alice", viewModel.getHolderName());
     assertEquals(6, viewModel.getRoadLength());
@@ -30,8 +30,8 @@ class LongestRoadPresenterTest {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
     LongestRoadPresenter presenter = new LongestRoadPresenter(viewModel);
 
-    presenter.present("Alice", 5);
-    presenter.present("Bob", 7);
+    presenter.present(new LongestRoadOutputData("Alice", 5));
+    presenter.present(new LongestRoadOutputData("Bob", 7));
 
     assertEquals("Bob", viewModel.getHolderName());
     assertEquals(7, viewModel.getRoadLength());
@@ -42,8 +42,8 @@ class LongestRoadPresenterTest {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
     LongestRoadPresenter presenter = new LongestRoadPresenter(viewModel);
 
-    presenter.present("Alice", 6);
-    presenter.present(null, 0);
+    presenter.present(new LongestRoadOutputData("Alice", 6));
+    presenter.present(new LongestRoadOutputData(null, 0));
 
     assertNull(viewModel.getHolderName());
     assertEquals(0, viewModel.getRoadLength());
@@ -58,7 +58,7 @@ class LongestRoadPresenterTest {
     viewModel.addPropertyChangeListener(
             event -> notificationCount.incrementAndGet());
 
-    presenter.present("Alice", 6);
+    presenter.present(new LongestRoadOutputData("Alice", 6));
 
     assertEquals(1, notificationCount.get());
   }
@@ -71,16 +71,12 @@ class LongestRoadPresenterTest {
   }
 
   @Test
-  void presenterAcceptsOutputData() {
+  void presenterRejectsNullOutputData() {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
     LongestRoadPresenter presenter = new LongestRoadPresenter(viewModel);
 
-    LongestRoadOutputData outputData =
-            new LongestRoadOutputData("Alice", 6);
-
-    presenter.present(outputData);
-
-    assertEquals("Alice", viewModel.getHolderName());
-    assertEquals(6, viewModel.getRoadLength());
+    assertThrows(
+            NullPointerException.class,
+            () -> presenter.present(null));
   }
 }

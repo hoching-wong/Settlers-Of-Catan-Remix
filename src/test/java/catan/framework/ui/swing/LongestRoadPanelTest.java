@@ -1,5 +1,6 @@
 package catan.framework.ui.swing;
 
+import catan.usecase.longestroad.LongestRoadOutputData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -113,7 +114,7 @@ class LongestRoadPanelTest {
 
     LongestRoadPanel panel = new LongestRoadPanel(viewModel);
 
-    presenter.present("Bob", 7);
+    presenter.present(new LongestRoadOutputData("Bob", 7));
     flushSwingEvents();
 
     assertTrue(containsLabel(panel, "Current Holder: Bob"));
