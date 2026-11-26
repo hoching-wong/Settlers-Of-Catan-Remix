@@ -1,3 +1,4 @@
+
 package catan.app;
 
 import catan.entity.BalancedLayoutStrategy;
@@ -41,6 +42,8 @@ import catan.usecase.restartgame.RestartGameInteractor;
 import catan.usecase.selectstructure.SelectStructureInteractor;
 import catan.usecase.startgame.StartGameInteractor;
 import catan.usecase.weather.WeatherDataAccessInterface;
+import catan.usecase.weather.WeatherInputBoundary;
+import catan.usecase.weather.WeatherInteractor;
 import java.awt.Dimension;
 import java.util.Objects;
 import java.util.Random;
@@ -113,20 +116,28 @@ public class AppBuilder {
         boardViewModel = new BoardViewModel();
         BoardRepository boardRepository = new InMemoryBoardRepository();
 
+        WeatherInputBoundary weatherInteractor =
+                new WeatherInteractor(weatherDataAccessObject);
+
         // UC8: Start Game generates the board, and the game is then played on that same board.
         GenerateBoardController generateBoard = new GenerateBoardController(new GenerateBoardInteractor(
                 gameRepository, boardRepository, new GenerateBoardPresenter(boardViewModel),
                 new BalancedLayoutStrategy()));
+
         StartGameController startGame = new StartGameController(new StartGameInteractor(
-                gameRepository, weatherDataAccessObject, new StartGamePresenter(startMenu, game, viewManager, boardViewModel),
+                gameRepository, weatherInteractor, new StartGamePresenter(startMenu, game, viewManager, boardViewModel),
                 random, boardRepository));
+
         placeInitialController = new PlaceInitialController(
                 new PlaceInitialInteractor(gameRepository, new PlaceInitialPresenter(game, boardViewModel)));
+
         // UC1: the build menu highlights where a structure can go, and a click there builds it.
         SelectStructureController selectStructure = new SelectStructureController(
                 new SelectStructureInteractor(gameRepository, new SelectStructurePresenter(boardViewModel)));
+
         BuildController build = new BuildController(
                 new BuildInteractor(gameRepository, new BuildPresenter(boardViewModel)));
+
         EndTurnController endTurn = new EndTurnController(
                 new EndTurnInteractor(
                         gameRepository,
@@ -152,6 +163,7 @@ public class AppBuilder {
         gameView = new GameView(game, endTurn);
         gameView.setBoardComponent(boardView);
         GameOverView gameOverView = new GameOverView(gameOver, restartGame);
+
         return new ScreenSwitcher(viewManager, startMenuView, gameView, gameOverView);
     }
 

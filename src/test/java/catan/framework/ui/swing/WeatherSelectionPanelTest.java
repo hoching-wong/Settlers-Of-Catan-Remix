@@ -1,18 +1,12 @@
 package catan.framework.ui.swing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import catan.interfaceadapter.controller.WeatherController;
-import catan.interfaceadapter.viewmodel.WeatherViewModel;
-import catan.usecase.weather.WeatherInputBoundary;
 import java.awt.Component;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +20,7 @@ class WeatherSelectionPanelTest {
    */
   @Test
   void dropdownContainsSixCities() throws Exception {
-    WeatherSelectionPanel panel = createPanel(inputData -> {}, new WeatherViewModel());
+    WeatherSelectionPanel panel = createPanel();
 
     SwingUtilities.invokeAndWait(() -> {
       JComboBox<?> dropdown = findDropdown(panel);
@@ -43,87 +37,71 @@ class WeatherSelectionPanelTest {
   }
 
   /**
-   * Tests that a message appears when no city is selected.
+   * Tests that no selected city returns null.
    *
    * @throws Exception if a Swing operation fails
    */
   @Test
-  void noCitySelectedShowsMessage() throws Exception {
-    WeatherSelectionPanel panel = createPanel(inputData -> {}, new WeatherViewModel());
+  void noCitySelectedReturnsNull() throws Exception {
+    WeatherSelectionPanel panel = createPanel();
 
     SwingUtilities.invokeAndWait(() -> {
-      findStartButton(panel).doClick();
-
-      assertTrue(hasLabel(panel, "Please select a city."));
+      assertNull(panel.getSelectedCity());
     });
   }
 
   /**
-   * Tests that clicking Start Game passes the selected city to the controller.
+   * Tests that the selected city is returned correctly.
    *
    * @throws Exception if a Swing operation fails
    */
   @Test
-  void startButtonPassesSelectedCity() throws Exception {
-    AtomicReference<String> receivedCity = new AtomicReference<>();
-    CountDownLatch requestReceived = new CountDownLatch(1);
-
-    WeatherInputBoundary inputBoundary =
-        inputData -> {
-          receivedCity.set(inputData.getCityName());
-          requestReceived.countDown();
-        };
-
-    WeatherSelectionPanel panel = createPanel(inputBoundary, new WeatherViewModel());
+  void selectedCityIsReturnedCorrectly() throws Exception {
+    WeatherSelectionPanel panel = createPanel();
 
     SwingUtilities.invokeAndWait(() -> {
       findDropdown(panel).setSelectedItem("Paris");
-      findStartButton(panel).doClick();
-    });
 
-    assertTrue(requestReceived.await(5, TimeUnit.SECONDS));
-    assertEquals("Paris", receivedCity.get());
+      assertEquals("Paris", panel.getSelectedCity());
+    });
   }
 
   /**
-   * Tests that weather information updates the labels.
+   * Tests that clearing the selection removes the selected city.
    *
    * @throws Exception if a Swing operation fails
    */
   @Test
-  void weatherUpdateChangesLabels() throws Exception {
-    WeatherViewModel viewModel = new WeatherViewModel();
-
-    WeatherSelectionPanel panel = createPanel(inputData -> {}, viewModel);
+  void clearSelectionRemovesSelectedCity() throws Exception {
+    WeatherSelectionPanel panel = createPanel();
 
     SwingUtilities.invokeAndWait(() -> {
-      viewModel.setWeatherInformation("Paris", "Stormy", "Ore ×2");
-    });
+      findDropdown(panel).setSelectedItem("Toronto");
 
-    SwingUtilities.invokeAndWait(() -> {
-      assertTrue(hasLabel(panel, "City: Paris"));
-      assertTrue(hasLabel(panel, "Weather: Stormy"));
-      assertTrue(hasLabel(panel, "Bonus: Ore ×2"));
+      assertEquals("Toronto", panel.getSelectedCity());
+
+      panel.clearSelection();
+
+      assertNull(panel.getSelectedCity());
+      assertEquals(-1, findDropdown(panel).getSelectedIndex());
     });
   }
 
   /**
    * Creates a weather selection panel on the Swing event thread.
    *
-   * @param inputBoundary the weather input boundary
-   * @param viewModel the weather view model
    * @return the created weather selection panel
    * @throws Exception if a Swing operation fails
    */
-  private static WeatherSelectionPanel createPanel(
-      WeatherInputBoundary inputBoundary, WeatherViewModel viewModel) throws Exception {
+  private static WeatherSelectionPanel createPanel() throws Exception {
 
-    AtomicReference<WeatherSelectionPanel> panel = new AtomicReference<>();
+    AtomicReference<WeatherSelectionPanel> panel =
+            new AtomicReference<>();
 
     SwingUtilities.invokeAndWait(() -> {
-      WeatherController controller = new WeatherController(inputBoundary);
-
-      panel.set(new WeatherSelectionPanel(controller, viewModel));
+      panel.set(new WeatherSelectionPanel(List.of(
+              "Toronto", "London", "Tokyo",
+              "New York", "Paris", "Sydney")));
     });
 
     return panel.get();
@@ -144,40 +122,5 @@ class WeatherSelectionPanelTest {
     }
 
     throw new AssertionError("City dropdown not found");
-  }
-
-  /**
-   * Finds the Start Game button in the panel.
-   *
-   * @param panel the weather selection panel
-   * @return the Start Game button
-   */
-  private static JButton findStartButton(WeatherSelectionPanel panel) {
-
-    for (Component component : panel.getComponents()) {
-      if (component instanceof JButton button) {
-        return button;
-      }
-    }
-
-    throw new AssertionError("Start Game button not found");
-  }
-
-  /**
-   * Checks whether a label displays the expected text.
-   *
-   * @param panel the weather selection panel
-   * @param expectedText the expected label text
-   * @return true if the label exists
-   */
-  private static boolean hasLabel(WeatherSelectionPanel panel, String expectedText) {
-
-    for (Component component : panel.getComponents()) {
-      if (component instanceof JLabel label && expectedText.equals(label.getText())) {
-        return true;
-      }
-    }
-
-    return false;
   }
 }

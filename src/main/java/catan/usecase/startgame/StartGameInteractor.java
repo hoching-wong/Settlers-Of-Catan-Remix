@@ -2,7 +2,6 @@ package catan.usecase.startgame;
 
 import catan.entity.Board;
 import catan.entity.BoardFactory;
-import catan.entity.CityLocation;
 import catan.entity.Dice;
 import catan.entity.Game;
 import catan.entity.GamePhase;
@@ -10,8 +9,9 @@ import catan.entity.Player;
 import catan.entity.WeatherData;
 import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
-import catan.usecase.weather.WeatherDataAccessInterface;
-import catan.usecase.weather.WeatherUnavailableException;
+import catan.usecase.weather.WeatherInputBoundary;
+import catan.usecase.weather.WeatherInputData;
+import catan.usecase.weather.WeatherOutputData;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.Set;
 public class StartGameInteractor implements StartGameInputBoundary {
 
     private final GameRepository gameRepository;
-    private final WeatherDataAccessInterface weatherDataAccessObject;
+    private final WeatherInputBoundary weatherInteractor;
     private final StartGameOutputBoundary outputBoundary;
     private final Random random;
     private final BoardRepository boardRepository;
@@ -36,9 +36,13 @@ public class StartGameInteractor implements StartGameInputBoundary {
      *
      * @param random used for the board layout and the dice; pass a seeded one in tests
      */
-    public StartGameInteractor(GameRepository gameRepository, WeatherDataAccessInterface weatherDataAccessObject,
-                               StartGameOutputBoundary outputBoundary, Random random) {
-        this(gameRepository, weatherDataAccessObject, outputBoundary, random, new NoGeneratedBoard());
+    public StartGameInteractor(
+            GameRepository gameRepository,
+            WeatherInputBoundary weatherInteractor,
+            StartGameOutputBoundary outputBoundary,
+            Random random) {
+        this(gameRepository, weatherInteractor, outputBoundary,
+                random, new NoGeneratedBoard());
     }
 
     /**
@@ -48,14 +52,23 @@ public class StartGameInteractor implements StartGameInputBoundary {
      *
      * @param random used for the dice, and for the board when none was generated
      */
-    public StartGameInteractor(GameRepository gameRepository, WeatherDataAccessInterface weatherDataAccessObject,
-                               StartGameOutputBoundary outputBoundary, Random random,
-                               BoardRepository boardRepository) {
-        this.gameRepository = Objects.requireNonNull(gameRepository, "gameRepository");
-        this.weatherDataAccessObject = Objects.requireNonNull(weatherDataAccessObject, "weatherDataAccessObject");
-        this.outputBoundary = Objects.requireNonNull(outputBoundary, "outputBoundary");
-        this.random = Objects.requireNonNull(random, "random");
-        this.boardRepository = Objects.requireNonNull(boardRepository, "boardRepository");
+    public StartGameInteractor(
+            GameRepository gameRepository,
+            WeatherInputBoundary weatherInteractor,
+            StartGameOutputBoundary outputBoundary,
+            Random random,
+            BoardRepository boardRepository) {
+
+        this.gameRepository = Objects.requireNonNull(
+                gameRepository, "gameRepository");
+        this.weatherInteractor = Objects.requireNonNull(
+                weatherInteractor, "weatherInteractor");
+        this.outputBoundary = Objects.requireNonNull(
+                outputBoundary, "outputBoundary");
+        this.random = Objects.requireNonNull(
+                random, "random");
+        this.boardRepository = Objects.requireNonNull(
+                boardRepository, "boardRepository");
     }
 
     /**
@@ -83,36 +96,24 @@ public class StartGameInteractor implements StartGameInputBoundary {
             return;
         }
 
-        CityLocation city = findCity(inputData.cityName());
-
-        if (inputData.cityName() == null || inputData.cityName().isBlank()) {
-            outputBoundary.presentError("Please select a city.");
-            return;
-        }
-
-        if (city == null) {
-            outputBoundary.presentError(
-                    "Unknown city: " + inputData.cityName().trim() + ".");
-            return;
-        }
-
-        boolean weatherAvailable = true;
-        WeatherData weather;
+        WeatherOutputData weatherOutputData;
 
         try {
-            weather = WeatherData.fromWmoCode(
-                    weatherDataAccessObject.fetchWeatherCode(city));
-
-        } catch (WeatherUnavailableException exception) {
-            weatherAvailable = false;
-            weather = WeatherData.none();
+            weatherOutputData = weatherInteractor.execute(
+                    new WeatherInputData(inputData.cityName()));
+        } catch (IllegalArgumentException exception) {
+            outputBoundary.presentError(exception.getMessage());
+            return;
         }
+
+        WeatherData weather = weatherOutputData.getWeather();
 
         List<Player> players = new ArrayList<>();
 
         for (String name : names) {
             players.add(new Player(name));
         }
+
         Board board = takeBoard();
         Game game = new Game(board, players, weather, new Dice(random));
 
@@ -121,8 +122,8 @@ public class StartGameInteractor implements StartGameInputBoundary {
 
         outputBoundary.presentGameStarted(new StartGameOutputData(
                 List.copyOf(names),
-                city.getName(),
-                weatherAvailable,
+                weatherOutputData.getCity().getName(),
+                weatherOutputData.isWeatherAvailable(),
                 weather.getCondition(),
                 weather.getBonusResource(),
                 weather.getMultiplier()));
@@ -191,28 +192,6 @@ public class StartGameInteractor implements StartGameInputBoundary {
                 return "Player names must be different: \""
                         + name
                         + "\" is used twice.";
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Finds a city from the predefined city list.
-     *
-     * @param cityName the selected city name
-     * @return the matching city, or null if not found
-     */
-    private static CityLocation findCity(String cityName) {
-        if (cityName == null) {
-            return null;
-        }
-
-        String wanted = cityName.trim();
-
-        for (CityLocation city : CityLocation.defaults()) {
-            if (city.getName().equalsIgnoreCase(wanted)) {
-                return city;
             }
         }
 

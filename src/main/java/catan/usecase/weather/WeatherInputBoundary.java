@@ -7,7 +7,10 @@ public interface WeatherInputBoundary {
    * Retrieves weather information for the selected city.
    *
    * @param inputData the weather use case input data
+   * @return the result of the weather lookup
+   * @throws IllegalArgumentException if the selected city is invalid
    */
-  void execute(WeatherInputData inputData);
+  WeatherOutputData execute(WeatherInputData inputData);
 }
+
 
