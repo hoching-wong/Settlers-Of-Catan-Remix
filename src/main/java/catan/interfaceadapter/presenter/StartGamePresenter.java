@@ -14,6 +14,7 @@ public class StartGamePresenter implements StartGameOutputBoundary {
     private final GameViewModel game;
     private final ViewManagerModel viewManager;
     private final BoardViewModel board;
+    private final Runnable refreshGameStatus;
 
     /** For a screen without a board view. */
     public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager) {
@@ -23,10 +24,17 @@ public class StartGamePresenter implements StartGameOutputBoundary {
     /** @param board told that the first click on the board places Player 1's first settlement */
     public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager,
                               BoardViewModel board) {
+        this(startMenu, game, viewManager, board, () -> {});
+    }
+
+    public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager,
+                              BoardViewModel board, Runnable refreshGameStatus) {
         this.startMenu = Objects.requireNonNull(startMenu, "startMenu");
         this.game = Objects.requireNonNull(game, "game");
         this.viewManager = Objects.requireNonNull(viewManager, "viewManager");
         this.board = Objects.requireNonNull(board, "board");
+        this.refreshGameStatus =
+                Objects.requireNonNull(refreshGameStatus, "refreshGameStatus");
     }
 
     @Override
@@ -39,6 +47,7 @@ public class StartGamePresenter implements StartGameOutputBoundary {
         board.getState().clearSelection();
         board.getState().setSetupTarget(BoardState.VERTEX);
         board.firePropertyChanged();
+        refreshGameStatus.run();
         viewManager.setActiveScreen(ViewManagerModel.Screen.GAME);
     }
 

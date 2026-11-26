@@ -142,7 +142,8 @@ public class AppBuilder {
                                         startMenu,
                                         game,
                                         viewManager,
-                                        boardViewModel),
+                                        boardViewModel,
+                                        statusController::execute),
                                 random,
                                 boardRepository));
 
@@ -151,7 +152,9 @@ public class AppBuilder {
                         new PlaceInitialInteractor(
                                 gameRepository,
                                 new PlaceInitialPresenter(
-                                        game, boardViewModel)));
+                                        game,
+                                        boardViewModel,
+                                        statusController::execute)));
 
         // UC1: Select and build structures.
         SelectStructureController selectStructure =
@@ -165,13 +168,17 @@ public class AppBuilder {
                 new BuildController(
                         new BuildInteractor(
                                 gameRepository,
-                                new BuildPresenter(boardViewModel)));
+                                new BuildPresenter(
+                                        boardViewModel,
+                                        statusController::execute)));
 
         EndTurnController endTurn =
                 new EndTurnController(
                         new EndTurnInteractor(
                                 gameRepository,
-                                new EndTurnPresenter(game)));
+                                new EndTurnPresenter(
+                                        game,
+                                        statusController::execute)));
 
         RestartGameController restartGame =
                 new RestartGameController(
@@ -206,18 +213,6 @@ public class AppBuilder {
         // Connect the board and the game status panel.
         gameView.setBoardComponent(boardView);
         gameView.setGameStatusPanel(statusPanel);
-
-        // Refresh the game status when the game state changes.
-        game.addPropertyChangeListener(event -> {
-            String property = event.getPropertyName();
-
-            if (GameViewModel.PLAYERS.equals(property)
-                    || GameViewModel.TURN.equals(property)
-                    || GameViewModel.MESSAGE.equals(property)) {
-
-                statusController.execute();
-            }
-        });
 
         GameOverView gameOverView =
                 new GameOverView(gameOver, restartGame);

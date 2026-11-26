@@ -5,13 +5,22 @@ import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.usecase.build.BuildOutputBoundary;
 import catan.usecase.build.BuildOutputData;
 import java.util.Locale;
+import java.util.Objects;
 
 /** Redraws the board after a build, or shows why the build was rejected. */
 public class BuildPresenter implements BuildOutputBoundary {
     private final BoardViewModel viewModel;
+    private final Runnable refreshGameStatus;
 
     public BuildPresenter(BoardViewModel viewModel) {
+        this(viewModel, () -> {});
+    }
+
+    public BuildPresenter(BoardViewModel viewModel,
+                          Runnable refreshGameStatus) {
         this.viewModel = viewModel;
+        this.refreshGameStatus =
+                Objects.requireNonNull(refreshGameStatus, "refreshGameStatus");
     }
 
     @Override
@@ -31,6 +40,7 @@ public class BuildPresenter implements BuildOutputBoundary {
         }
         state.setMessage(message.toString(), false);
         viewModel.firePropertyChanged();
+        refreshGameStatus.run();
     }
 
     /** The selection and highlights stay, so the player can simply click somewhere else. */
