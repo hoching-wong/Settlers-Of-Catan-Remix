@@ -74,6 +74,40 @@ class WeatherInteractorTest {
     assertEquals(0, weatherDataAccessObject.callCount);
   }
 
+  /** Tests that a null city name produces an error. */
+  @Test
+  void nullCityNameShowsError() {
+    FakeWeatherDataAccessObject weatherDataAccessObject =
+            new FakeWeatherDataAccessObject(0);
+
+    WeatherInteractor interactor =
+            new WeatherInteractor(weatherDataAccessObject);
+
+    IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> interactor.execute(new WeatherInputData(null)));
+
+    assertEquals("Please select a city.", exception.getMessage());
+    assertEquals(0, weatherDataAccessObject.callCount);
+  }
+
+  /** Tests that whitespace-only city names are rejected. */
+  @Test
+  void whitespaceCityShowsError() {
+    FakeWeatherDataAccessObject weatherDataAccessObject =
+            new FakeWeatherDataAccessObject(0);
+
+    WeatherInteractor interactor =
+            new WeatherInteractor(weatherDataAccessObject);
+
+    IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> interactor.execute(new WeatherInputData("   ")));
+
+    assertEquals("Please select a city.", exception.getMessage());
+    assertEquals(0, weatherDataAccessObject.callCount);
+  }
+
   /** Tests that an unknown city is rejected. */
   @Test
   void unknownCityShowsError() {
