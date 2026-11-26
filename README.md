@@ -119,6 +119,12 @@ As a player, I want to get the conditional 2 points if I have the longest road (
 ### User Story 7
 As a player, I want to win the game (stop the game) if someone reaches 10 points.
 
+### User Story 8
+As a player, I want the game board to be randomly generated at the start of each new game so that each game offers a new layout and strategy.
+
+### User Story 9
+As a player, I want to the ability to check a leaderboard in which player names and their total games won are permanently tracked and stored.
+
 --
 
 ## Use Cases
@@ -310,14 +316,57 @@ Post conditions:
 - Winning player and final standing are displayed on screen
 - Option to restart the game or exit to main menu is displayed
 
+### Use Case 8
+Primary actor: Player 
+Goal: Allows the system to sequentially generate a randomized game board tile-by-tile at the start of each new game using a deterministic single-pass shuffle
+Preconditions:
+- Players have completed the setup phase (entered names and selected a city)
+
+Main path:
+1. The player clicks the button to begin the game after setup
+2. The system initializes the fixed standard terrain pool (4 forest, 3 hills, 4 fields, 4 pasture, 3 mountains, 1 desert) and standard number tokens (2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12, and 0 for the desert)
+3. The system forces the desert to start at the center of the board when reaching the 10th tile
+4. The system assigns sequential IDs from 0 through 18, instantiates 19 Tile objects, and populates the board's 54 vertices and 72 edges while wiring up full geometric adjacencies
+5. The system receives the generated Board instance and binds it to the active Game instance 
+6. The game renders the complete randomized board layout on the screen
+
+Alternate path:
+N/A
+
+Post conditions:
+- A new, randomized game board (Board) containing all 19 tiles, vertices, and edges is generated and locked in for the match
+- The game state successfully transitions to the initial setup phase
+
+### Use Case 9
+Primary actor: System
+Goal: Automatically records and permanently saves game win statistics (player name and total wins) to a persistent file after a game concludes
+Preconditions:
+- A game has reached its winning condition (a player reached 10 victory points)
+
+Main path:
+1. The system detects the game-over event and retrieves the winning player's name 
+2. The system opens the local persistent storage file (e.g., game_stats.json)
+3. The system reads the existing win history data from the file 
+4. The system updates the winning player's record by incrementing their total win count by 1 (or adds a new entry if the player has no previous wins)
+5. The system writes and saves the updated win records back into the persistent JSON file 
+6. The system confirms the data has been securely saved and proceeds to display the victory screen
+
+Alternate path:
+2. If the storage file does not exist, the system automatically creates a new JSON file with the initial win record structure
+5. If the file write operation fails due to system permissions or I/O errors, the system attempts a retry and logs the error to prevent data loss
+
+Post conditions:
+- The winning player's name and updated total win count are permanently saved to a file on the system 
+- The stored win data persists across application restarts
+
 ---
 
 ## Minimal Viable Product (MVP)
 
 | Team Member | MVP Use Case |
 |-------------|--------------|
-| Alison Cai | Use Case 1 |
-| Taito Sugiyama | Use Case 2 |
+| Alison Cai | Use Case 1, 8 |
+| Taito Sugiyama | Use Case 2, 9 |
 | James Wong | Use Case 3, 7 |
 | Chuqian Xiao | Use Case 4, 5, 6  |
 
