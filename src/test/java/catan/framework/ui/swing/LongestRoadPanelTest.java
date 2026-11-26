@@ -1,11 +1,11 @@
 package catan.framework.ui.swing;
 
-import catan.usecase.longestroad.LongestRoadOutputData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import catan.interfaceadapter.presenter.LongestRoadPresenter;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
+import catan.usecase.longestroad.LongestRoadOutputData;
 import java.awt.Component;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
@@ -43,7 +43,8 @@ class LongestRoadPanelTest {
 
   @Test
   void initialStateShowsNoHolder() {
-    LongestRoadPanel panel = new LongestRoadPanel();
+    LongestRoadPanel panel =
+            new LongestRoadPanel(new LongestRoadViewModel());
 
     assertTrue(containsLabel(panel, "Current Holder: None"));
     assertTrue(containsLabel(panel, "Longest Road Length: -"));
@@ -51,10 +52,12 @@ class LongestRoadPanelTest {
   }
 
   @Test
-  void updateDisplaysHolderInformation() {
-    LongestRoadPanel panel = new LongestRoadPanel();
+  void updateDisplaysHolderInformation() throws Exception {
+    LongestRoadViewModel viewModel = new LongestRoadViewModel();
+    LongestRoadPanel panel = new LongestRoadPanel(viewModel);
 
-    panel.updateLongestRoad("Alice", 6);
+    viewModel.updateState("Alice", 6);
+    flushSwingEvents();
 
     assertTrue(containsLabel(panel, "Current Holder: Alice"));
     assertTrue(containsLabel(panel, "Longest Road Length: 6"));
@@ -62,11 +65,15 @@ class LongestRoadPanelTest {
   }
 
   @Test
-  void updateWithNullHolderShowsNoHolder() {
-    LongestRoadPanel panel = new LongestRoadPanel();
+  void updateWithNullHolderShowsNoHolder() throws Exception {
+    LongestRoadViewModel viewModel = new LongestRoadViewModel();
+    LongestRoadPanel panel = new LongestRoadPanel(viewModel);
 
-    panel.updateLongestRoad("Alice", 6);
-    panel.updateLongestRoad(null, 0);
+    viewModel.updateState("Alice", 6);
+    flushSwingEvents();
+
+    viewModel.updateState(null, 0);
+    flushSwingEvents();
 
     assertTrue(containsLabel(panel, "Current Holder: None"));
     assertTrue(containsLabel(panel, "Longest Road Length: -"));
@@ -74,11 +81,15 @@ class LongestRoadPanelTest {
   }
 
   @Test
-  void updateReplacesPreviousHolder() {
-    LongestRoadPanel panel = new LongestRoadPanel();
+  void updateReplacesPreviousHolder() throws Exception {
+    LongestRoadViewModel viewModel = new LongestRoadViewModel();
+    LongestRoadPanel panel = new LongestRoadPanel(viewModel);
 
-    panel.updateLongestRoad("Alice", 5);
-    panel.updateLongestRoad("Bob", 7);
+    viewModel.updateState("Alice", 5);
+    flushSwingEvents();
+
+    viewModel.updateState("Bob", 7);
+    flushSwingEvents();
 
     assertTrue(containsLabel(panel, "Current Holder: Bob"));
     assertTrue(containsLabel(panel, "Longest Road Length: 7"));
@@ -87,19 +98,18 @@ class LongestRoadPanelTest {
 
   @Test
   void panelContainsFourLabels() {
-    LongestRoadPanel panel = new LongestRoadPanel();
+    LongestRoadPanel panel =
+            new LongestRoadPanel(new LongestRoadViewModel());
 
     assertEquals(4, panel.getComponentCount());
   }
 
   @Test
-  void viewModelUpdatesPanelAutomatically() throws Exception {
+  void panelDisplaysExistingViewModelState() {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
+    viewModel.updateState("Alice", 6);
 
     LongestRoadPanel panel = new LongestRoadPanel(viewModel);
-
-    viewModel.updateState("Alice", 6);
-    flushSwingEvents();
 
     assertTrue(containsLabel(panel, "Current Holder: Alice"));
     assertTrue(containsLabel(panel, "Longest Road Length: 6"));
@@ -123,19 +133,9 @@ class LongestRoadPanelTest {
   }
 
   @Test
-  void clearingViewModelClearsPanel() throws Exception {
-    LongestRoadViewModel viewModel = new LongestRoadViewModel();
-
-    final LongestRoadPanel panel = new LongestRoadPanel(viewModel);
-
-    viewModel.updateState("Alice", 6);
-    flushSwingEvents();
-
-    viewModel.updateState(null, 0);
-    flushSwingEvents();
-
-    assertTrue(containsLabel(panel, "Current Holder: None"));
-    assertTrue(containsLabel(panel, "Longest Road Length: -"));
-    assertTrue(containsLabel(panel, "Victory Point Bonus: 0 VP"));
+  void panelRejectsNullViewModel() {
+    org.junit.jupiter.api.Assertions.assertThrows(
+            NullPointerException.class,
+            () -> new LongestRoadPanel(null));
   }
 }
