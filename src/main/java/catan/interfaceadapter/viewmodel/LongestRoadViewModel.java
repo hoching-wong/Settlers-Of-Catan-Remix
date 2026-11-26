@@ -1,12 +1,7 @@
 package catan.interfaceadapter.viewmodel;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-
 /** Stores Longest Road information for the view. */
-public class LongestRoadViewModel {
-
-  private final PropertyChangeSupport support = new PropertyChangeSupport(this);
+public class LongestRoadViewModel extends ViewModel {
 
   private String holderName;
   private int roadLength;
@@ -39,15 +34,6 @@ public class LongestRoadViewModel {
     holderName = newHolderName;
     roadLength = newHolderName == null ? 0 : newRoadLength;
 
-    support.firePropertyChange("longestRoad", null, this);
-  }
-
-  /**
-   * Registers a listener for state changes.
-   *
-   * @param listener the listener to register
-   */
-  public void addPropertyChangeListener(PropertyChangeListener listener) {
-    support.addPropertyChangeListener(listener);
+    firePropertyChanged("longestRoad", this);
   }
 }
