@@ -16,6 +16,8 @@ import catan.usecase.FakeGameRepository;
 import catan.usecase.TestGames;
 import catan.usecase.boardstate.BoardSnapshot;
 import catan.usecase.build.placement.PlacementStrategies;
+import catan.usecase.longestroad.LongestRoadInteractor;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +26,8 @@ import org.junit.jupiter.api.Test;
 class BuildInteractorTest {
     private final FakeGameRepository repo = new FakeGameRepository();
     private final Recorder presenter = new Recorder();
-    private final BuildInteractor interactor = new BuildInteractor(repo, presenter);
+    private final BuildInteractor interactor =
+            new BuildInteractor(repo, presenter, new LongestRoadInteractor());
     private final PlacementStrategies placements = PlacementStrategies.standard();
 
     private static class Recorder implements BuildOutputBoundary {
@@ -224,5 +227,34 @@ class BuildInteractorTest {
 
         interactor.execute(new BuildInputData(StructureType.ROAD, 0));
         assertEquals("The game is over.", presenter.error);
+    }
+
+    @Test
+    void onlySuccessfulBuildCallsLongestRoadAfterPlacement() {
+        Game game = readyGame();
+        int edge = firstValid(game, StructureType.ROAD);
+        List<Game> receivedGames = new ArrayList<>();
+        LongestRoadInteractor longestRoadInteractor =
+                new LongestRoadInteractor();
+
+        BuildInteractor buildInteractor = new BuildInteractor(
+                repo, presenter, inputData -> {
+            receivedGames.add(inputData.game());
+            assertTrue(game.getBoard().getEdge(edge).isOccupied());
+            assertEquals(0, repo.gameSaves);
+            return longestRoadInteractor.execute(inputData);
+        });
+
+        buildInteractor.execute(new BuildInputData(StructureType.ROAD, -1));
+
+        assertNotNull(presenter.error);
+        assertTrue(receivedGames.isEmpty());
+
+        buildInteractor.execute(new BuildInputData(StructureType.ROAD, edge));
+
+        assertNull(presenter.error);
+        assertEquals(1, receivedGames.size());
+        assertSame(game, receivedGames.get(0));
+        assertEquals(1, repo.gameSaves);
     }
 }

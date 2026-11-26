@@ -5,6 +5,7 @@ import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -36,6 +37,7 @@ public class GameView extends JPanel implements PropertyChangeListener {
     private final JLabel errorLabel = new JLabel(" ", SwingConstants.CENTER);
     private final JButton endTurnButton = new JButton("End Turn");
     private final JPanel boardSlot = new JPanel(new BorderLayout());
+    private final JPanel sidePanel = new JPanel(new BorderLayout(0, 8));
 
     public GameView(GameViewModel viewModel, EndTurnController endTurnController) {
         this(viewModel, endTurnController, null);
@@ -85,8 +87,11 @@ public class GameView extends JPanel implements PropertyChangeListener {
         add(boardSlot, BorderLayout.CENTER);
 
         if (longestRoadPanel != null) {
-            longestRoadPanel.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 8));
-            add(longestRoadPanel, BorderLayout.EAST);
+            longestRoadPanel.setBorder(
+                    BorderFactory.createEmptyBorder(8, 12, 8, 8));
+            longestRoadPanel.setPreferredSize(new Dimension(320, 150));
+            sidePanel.add(longestRoadPanel, BorderLayout.NORTH);
+            add(sidePanel, BorderLayout.EAST);
         }
 
         JPanel footer = new JPanel();
@@ -107,6 +112,34 @@ public class GameView extends JPanel implements PropertyChangeListener {
         boardSlot.add(board, BorderLayout.CENTER);
         boardSlot.revalidate();
         boardSlot.repaint();
+    }
+
+    /**
+     * Adds the game status panel below the Longest Road panel.
+     *
+     * @param statusPanel the panel displaying the current game status
+     */
+    public void setGameStatusPanel(JComponent statusPanel) {
+        Objects.requireNonNull(statusPanel, "statusPanel");
+
+        statusPanel.setPreferredSize(new Dimension(320, 520));
+
+        JComponent previousPanel = (JComponent)
+                ((BorderLayout) sidePanel.getLayout())
+                        .getLayoutComponent(BorderLayout.CENTER);
+
+        if (previousPanel != null) {
+            sidePanel.remove(previousPanel);
+        }
+
+        sidePanel.add(statusPanel, BorderLayout.CENTER);
+
+        if (sidePanel.getParent() != this) {
+            add(sidePanel, BorderLayout.EAST);
+        }
+
+        revalidate();
+        repaint();
     }
 
     @Override

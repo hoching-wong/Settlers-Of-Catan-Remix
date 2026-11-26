@@ -1,4 +1,3 @@
-
 package catan.usecase.longestroad;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,10 +15,8 @@ import catan.entity.Road;
 import catan.entity.Vertex;
 import catan.entity.WeatherData;
 import catan.framework.ui.swing.LongestRoadPanel;
-import catan.interfaceadapter.controller.LongestRoadController;
 import catan.interfaceadapter.presenter.LongestRoadPresenter;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
-import catan.usecase.FakeGameRepository;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,18 +46,17 @@ class LongestRoadIntegrationTest {
   private final LongestRoadPresenter presenter =
           new LongestRoadPresenter(viewModel);
 
-  private final FakeGameRepository repository =
-          new FakeGameRepository();
-
   private final LongestRoadInteractor interactor =
-          new LongestRoadInteractor(repository, presenter);
+          new LongestRoadInteractor();
 
-  private final LongestRoadController controller =
-          new LongestRoadController(interactor);
+  /**
+   * Recalculates the Longest Road and presents the result.
+   */
+  private void updateLongestRoad() {
+    LongestRoadOutputData outputData =
+            interactor.execute(new LongestRoadInputData(game));
 
-  /** Saves the current game in the repository. */
-  LongestRoadIntegrationTest() {
-    repository.save(game);
+    presenter.present(outputData);
   }
 
   /**
@@ -158,7 +154,7 @@ class LongestRoadIntegrationTest {
   void noRoadsShowsNoHolder() throws Exception {
     final LongestRoadPanel panel = createPanel();
 
-    controller.execute();
+    updateLongestRoad();
     flushSwingEvents();
 
     assertNull(game.getLongestRoadHolder());
@@ -178,7 +174,7 @@ class LongestRoadIntegrationTest {
 
     addRoads(alice, 0, 5);
 
-    controller.execute();
+    updateLongestRoad();
     flushSwingEvents();
 
     assertSame(alice, game.getLongestRoadHolder());
@@ -206,14 +202,14 @@ class LongestRoadIntegrationTest {
 
     addRoads(alice, 0, 5);
 
-    controller.execute();
+    updateLongestRoad();
     flushSwingEvents();
 
     assertSame(alice, game.getLongestRoadHolder());
 
     addRoads(bob, 8, 6);
 
-    controller.execute();
+    updateLongestRoad();
     flushSwingEvents();
 
     assertSame(bob, game.getLongestRoadHolder());

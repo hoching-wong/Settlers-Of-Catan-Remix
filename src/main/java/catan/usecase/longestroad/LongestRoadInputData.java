@@ -1,4 +1,10 @@
 package catan.usecase.longestroad;
 
-/** Input data for recalculating the Longest Road. */
-public record LongestRoadInputData() {}
+import catan.entity.Game;
+
+/**
+ * Input data for recalculating the Longest Road.
+ *
+ * @param game the current game
+ */
+public record LongestRoadInputData(Game game) {}

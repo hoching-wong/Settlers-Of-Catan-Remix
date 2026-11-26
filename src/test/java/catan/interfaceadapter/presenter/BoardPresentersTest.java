@@ -93,7 +93,9 @@ class BoardPresentersTest {
     @Test
     void buildPresenterKeepsSelectionOnFailAndClearsOnSuccess() {
         vm.getState().select("SETTLEMENT", BoardState.VERTEX, java.util.Set.of(1));
-        BuildPresenter p = new BuildPresenter(vm, longestRoadViewModel);
+        BuildPresenter p = new BuildPresenter(
+                vm, new LongestRoadPresenter(longestRoadViewModel));
+
         p.prepareFailView("nope");
         assertEquals("SETTLEMENT", vm.getState().getSelectedStructure());
         assertTrue(vm.getState().isError());
@@ -107,5 +109,8 @@ class BoardPresentersTest {
         assertFalse(vm.getState().isError());
         assertTrue(vm.getState().getMessage().contains("Longest Road"));
         assertTrue(vm.getState().getMessage().contains("wins"));
+
+        assertEquals("Ann", longestRoadViewModel.getHolderName());
+        assertEquals(5, longestRoadViewModel.getRoadLength());
     }
 }

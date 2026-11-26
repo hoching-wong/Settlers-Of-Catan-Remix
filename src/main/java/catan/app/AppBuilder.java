@@ -13,7 +13,6 @@ import catan.framework.ui.swing.StartMenuView;
 import catan.interfaceadapter.controller.BuildController;
 import catan.interfaceadapter.controller.EndTurnController;
 import catan.interfaceadapter.controller.GenerateBoardController;
-import catan.interfaceadapter.controller.LongestRoadController;
 import catan.interfaceadapter.controller.PlaceInitialController;
 import catan.interfaceadapter.controller.RestartGameController;
 import catan.interfaceadapter.controller.SelectStructureController;
@@ -36,6 +35,7 @@ import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.usecase.build.BuildInteractor;
 import catan.usecase.endturn.EndTurnInteractor;
 import catan.usecase.generateboard.GenerateBoardInteractor;
+import catan.usecase.longestroad.LongestRoadInputBoundary;
 import catan.usecase.longestroad.LongestRoadInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.BoardRepository;
@@ -67,7 +67,6 @@ public class AppBuilder {
     private GameView gameView;
     private BoardViewModel boardViewModel;
     private PlaceInitialController placeInitialController;
-    private LongestRoadController longestRoadController;
     private LongestRoadViewModel longestRoadViewModel;
     private GameOverPresenter gameOverPresenter;
 
@@ -123,30 +122,37 @@ public class AppBuilder {
         GenerateBoardController generateBoard = new GenerateBoardController(new GenerateBoardInteractor(
                 gameRepository, boardRepository, new GenerateBoardPresenter(boardViewModel),
                 new BalancedLayoutStrategy()));
+
         StartGameController startGame = new StartGameController(new StartGameInteractor(
                 gameRepository, weatherGateway, new StartGamePresenter(startMenu, game, viewManager,
                 boardViewModel, longestRoadViewModel),
                 random, boardRepository));
+
         placeInitialController = new PlaceInitialController(
                 new PlaceInitialInteractor(gameRepository, new PlaceInitialPresenter(game, boardViewModel)));
+
         // UC1: the build menu highlights where a structure can go, and a click there builds it.
         SelectStructureController selectStructure = new SelectStructureController(
                 new SelectStructureInteractor(gameRepository, new SelectStructurePresenter(boardViewModel)));
-        BuildController build = new BuildController(
-                new BuildInteractor(gameRepository, new BuildPresenter(boardViewModel, longestRoadViewModel)));
-        EndTurnController endTurn = new EndTurnController(
-                new EndTurnInteractor(gameRepository, new EndTurnPresenter(game)));
-        RestartGameController restartGame = new RestartGameController(new RestartGameInteractor(
-                gameRepository, new RestartGamePresenter(startMenu, game, gameOver, viewManager)));
-        gameOverPresenter = new GameOverPresenter(gameOver, viewManager);
 
-        // Create and connect the Longest Road components.
+        LongestRoadInputBoundary longestRoadInteractor =
+                new LongestRoadInteractor();
+
         LongestRoadPresenter longestRoadPresenter =
                 new LongestRoadPresenter(longestRoadViewModel);
 
-        longestRoadController = new LongestRoadController(
-                new LongestRoadInteractor(
-                        gameRepository, longestRoadPresenter));
+        BuildController build = new BuildController(
+                new BuildInteractor(gameRepository,
+                        new BuildPresenter(boardViewModel, longestRoadPresenter),
+                        longestRoadInteractor));
+
+        EndTurnController endTurn = new EndTurnController(
+                new EndTurnInteractor(gameRepository, new EndTurnPresenter(game)));
+
+        RestartGameController restartGame = new RestartGameController(new RestartGameInteractor(
+                gameRepository, new RestartGamePresenter(startMenu, game, gameOver, viewManager)));
+
+        gameOverPresenter = new GameOverPresenter(gameOver, viewManager);
 
         StartMenuView startMenuView = new StartMenuView(startMenu, startGame, backgroundExecutor);
         startMenuView.setGenerateBoardController(generateBoard);
@@ -196,15 +202,6 @@ public class AppBuilder {
     /** What the board view calls when a vertex or edge is clicked during setup. */
     public PlaceInitialController getPlaceInitialController() {
         return requireBuilt(placeInitialController);
-    }
-
-    /**
-     * Returns the controller for recalculating Longest Road.
-     *
-     * @return the Longest Road controller
-     */
-    public LongestRoadController getLongestRoadController() {
-        return requireBuilt(longestRoadController);
     }
 
     /**
