@@ -7,7 +7,6 @@ import catan.usecase.viewgamestatus.ViewGameStatusOutputData;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -36,23 +35,23 @@ public class ViewGameStatusPresenter implements ViewGameStatusOutputBoundary {
       }
 
       players.add(
-          new GameStatusViewModel.PlayerStatus(
-              player.playerName(), player.victoryPoints(), resources));
+              new GameStatusViewModel.PlayerStatus(
+                      player.playerName(), player.victoryPoints(), resources));
     }
 
     String weatherText = "Weather: None";
     String bonusText = "Bonus: None";
 
     if (outputData.weatherCondition() != null) {
-      weatherText = "Weather: " + formatName(outputData.weatherCondition().name());
+      weatherText = "Weather: " + Text.title(outputData.weatherCondition());
     }
 
     if (outputData.bonusResource() != null) {
       bonusText =
-          "Bonus: "
-              + formatName(outputData.bonusResource().name())
-              + " x"
-              + outputData.multiplier();
+              "Bonus: "
+                      + Text.title(outputData.bonusResource())
+                      + " x"
+                      + outputData.multiplier();
     }
 
     viewModel.setStatus(players, outputData.currentPlayerName(), weatherText, bonusText);
@@ -61,15 +60,5 @@ public class ViewGameStatusPresenter implements ViewGameStatusOutputBoundary {
   @Override
   public void prepareFailView(String errorMessage) {
     viewModel.setError(errorMessage);
-  }
-
-  /**
-   * Converts an enum name into a displayable name.
-   *
-   * @param name the enum name
-   * @return the formatted name
-   */
-  private static String formatName(String name) {
-    return name.charAt(0) + name.substring(1).toLowerCase(Locale.ROOT);
   }
 }
