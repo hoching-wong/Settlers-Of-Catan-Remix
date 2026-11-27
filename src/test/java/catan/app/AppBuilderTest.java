@@ -258,10 +258,46 @@ class AppBuilderTest {
         Game game = repository.get();
         finishSetup(game);
 
-        game.markRolled(); // the roll-dice use case will do this
+        click("rollDice");
         click("endTurn");
         assertEquals("Current turn: Bob", label("turn"));
         assertEquals("Ann ended their turn.", label("message"));
+    }
+
+    // ---- rolling the dice ----
+
+    @Test
+    void rollingTheDiceShowsTheResultAndWhatToDoNext() {
+        startAGame("Toronto", "Ann", "Bob");
+        finishSetup(repository.get());
+
+        click("rollDice");
+
+        assertTrue(label("message").startsWith("Ann rolled "), label("message"));
+        assertEquals("Build or end your turn", label("instruction"));
+        assertEquals(" ", label("gameError"));
+        assertTrue(repository.get().hasRolled());
+    }
+
+    @Test
+    void rollingTwiceInOneTurnShowsTheRefusal() {
+        startAGame("Toronto", "Ann", "Bob");
+        finishSetup(repository.get());
+
+        click("rollDice");
+        click("rollDice");
+
+        assertEquals("You have already rolled this turn.", label("gameError"));
+    }
+
+    @Test
+    void rollingDuringSetupShowsTheRefusal() {
+        startAGame("Toronto", "Ann", "Bob");
+
+        click("rollDice");
+
+        assertEquals("Finish placing the starting settlements and roads first.", label("gameError"));
+        assertFalse(repository.get().hasRolled());
     }
 
     @Test
@@ -416,7 +452,7 @@ class AppBuilderTest {
         startAGame("Toronto", "Ann", "Bob");
         Game game = repository.get();
         finishSetup(game);
-        game.markRolled(); // the roll-dice use case will do this
+        click("rollDice");
         Player ann = game.getCurrentPlayer();
         ann.getResources().addResource(ResourceType.LUMBER, 1);
         ann.getResources().addResource(ResourceType.BRICK, 1);
