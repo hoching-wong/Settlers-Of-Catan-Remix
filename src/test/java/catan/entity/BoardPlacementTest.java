@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 import org.junit.jupiter.api.Test;
 
 class BoardPlacementTest {
@@ -12,9 +13,13 @@ class BoardPlacementTest {
     private final Player ann = new Player("Ann");
     private final Player bob = new Player("Bob");
 
-    /** Vertices a0-a1-a2-a3 along a path that never backtracks. */
+    /**
+     * Vertices a0-a1-a2-a3 along a path that never backtracks.
+     */
     private final List<Vertex> path = new ArrayList<>();
-    /** path.get(i) to path.get(i + 1). */
+    /**
+     * path.get(i) to path.get(i + 1).
+     */
     private final List<Edge> pathEdges = new ArrayList<>();
 
     BoardPlacementTest() {

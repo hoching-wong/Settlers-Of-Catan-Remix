@@ -1,74 +1,116 @@
 package catan.entity;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+/** Tests the weather conditions and resource bonuses in WeatherData. */
 class WeatherDataTest {
-    private static void assertBonus(int code, WeatherType type, ResourceType resource) {
-        WeatherData w = WeatherData.fromWmoCode(code);
-        assertEquals(type, w.getCondition(), "code " + code);
-        assertEquals(resource, w.getBonusResource(), "code " + code);
-        assertEquals(2, w.getMultiplier(), "code " + code);
-        assertTrue(w.hasBonus(), "code " + code);
+
+  /**
+   * Checks that a weather code produces the expected resource bonus.
+   *
+   * @param code the WMO weather code
+   * @param expectedType the expected weather condition
+   * @param expectedResource the expected bonus resource
+   */
+  private void assertBonus(int code, WeatherType expectedType, ResourceType expectedResource) {
+
+    WeatherData weather = WeatherData.fromWmoCode(code);
+
+    assertEquals(expectedType, weather.getCondition());
+    assertEquals(expectedResource, weather.getBonusResource());
+    assertEquals(2, weather.getMultiplier());
+    assertTrue(weather.hasBonus());
+  }
+
+  /**
+   * Checks that a weather code does not produce a resource bonus.
+   *
+   * @param code the WMO weather code
+   */
+  private void assertNoBonus(int code) {
+    WeatherData weather = WeatherData.fromWmoCode(code);
+
+    assertFalse(weather.hasBonus());
+    assertNull(weather.getBonusResource());
+    assertEquals(1, weather.getMultiplier());
+  }
+
+  @Test
+  void testSunnyWeather() {
+    for (int code = 0; code <= 1; code++) {
+      assertBonus(code, WeatherType.SUNNY, ResourceType.LUMBER);
+    }
+  }
+
+  @Test
+  void testCloudyWeather() {
+    for (int code = 2; code <= 3; code++) {
+      assertBonus(code, WeatherType.CLOUDY, ResourceType.BRICK);
+    }
+  }
+
+  @Test
+  void testRainyWeather() {
+    for (int code = 51; code <= 67; code++) {
+      assertBonus(code, WeatherType.RAINY, ResourceType.GRAIN);
     }
 
-    private static void assertNoBonus(int code) {
-        WeatherData w = WeatherData.fromWmoCode(code);
-        assertFalse(w.hasBonus(), "code " + code);
-        assertNull(w.getBonusResource(), "code " + code);
-        assertEquals(1, w.getMultiplier(), "code " + code);
+    for (int code = 80; code <= 82; code++) {
+      assertBonus(code, WeatherType.RAINY, ResourceType.GRAIN);
+    }
+  }
+
+  @Test
+  void testSnowyWeather() {
+    for (int code = 71; code <= 77; code++) {
+      assertBonus(code, WeatherType.SNOWY, ResourceType.WOOL);
     }
 
-    @Test
-    void sunny() {
-        for (int c = 0; c <= 1; c++) assertBonus(c, WeatherType.SUNNY, ResourceType.LUMBER);
+    for (int code = 85; code <= 86; code++) {
+      assertBonus(code, WeatherType.SNOWY, ResourceType.WOOL);
     }
+  }
 
-    @Test
-    void cloudy() {
-        for (int c = 2; c <= 3; c++) assertBonus(c, WeatherType.CLOUDY, ResourceType.BRICK);
+  @Test
+  void testStormyWeather() {
+    for (int code = 95; code <= 99; code++) {
+      assertBonus(code, WeatherType.STORMY, ResourceType.ORE);
     }
+  }
 
-    @Test
-    void rainy() {
-        for (int c = 51; c <= 67; c++) assertBonus(c, WeatherType.RAINY, ResourceType.GRAIN);
-        for (int c = 80; c <= 82; c++) assertBonus(c, WeatherType.RAINY, ResourceType.GRAIN);
-    }
+  @Test
+  void testFogWeather() {
+    WeatherData weather = WeatherData.fromWmoCode(45);
 
-    @Test
-    void snowy() {
-        for (int c = 71; c <= 77; c++) assertBonus(c, WeatherType.SNOWY, ResourceType.WOOL);
-        for (int c = 85; c <= 86; c++) assertBonus(c, WeatherType.SNOWY, ResourceType.WOOL);
-    }
+    assertEquals(WeatherType.FOG, weather.getCondition());
+    assertNoBonus(45);
+    assertNoBonus(48);
+  }
 
-    @Test
-    void stormy() {
-        for (int c = 95; c <= 99; c++) assertBonus(c, WeatherType.STORMY, ResourceType.ORE);
-    }
+  @Test
+  void testUnknownWeatherCode() {
+    int[] unknownCodes = {-1, 4, 50, 68, 70, 100};
 
-    @Test
-    void fogHasConditionButNoBonus() {
-        assertEquals(WeatherType.FOG, WeatherData.fromWmoCode(45).getCondition());
-        assertEquals(WeatherType.FOG, WeatherData.fromWmoCode(48).getCondition());
-        assertNoBonus(45);
-        assertNoBonus(48);
-    }
+    for (int code : unknownCodes) {
+      WeatherData weather = WeatherData.fromWmoCode(code);
 
-    @Test
-    void uncategorisedCodesGiveNoBonus() {
-        for (int c : new int[] {-1, 4, 44, 46, 49, 50, 68, 70, 78, 79, 83, 84, 87, 94, 100, 1000}) {
-            assertNoBonus(c);
-            assertNull(WeatherData.fromWmoCode(c).getCondition(), "code " + c);
-        }
+      assertNull(weather.getCondition());
+      assertNoBonus(code);
     }
+  }
 
-    @Test
-    void noneHasNoBonus() {
-        WeatherData w = WeatherData.none();
-        assertFalse(w.hasBonus());
-        assertNull(w.getBonusResource());
-        assertNull(w.getCondition());
-        assertEquals(1, w.getMultiplier());
-    }
+  @Test
+  void testNoWeatherData() {
+    WeatherData weather = WeatherData.none();
+
+    assertNull(weather.getCondition());
+    assertNull(weather.getBonusResource());
+    assertEquals(1, weather.getMultiplier());
+    assertFalse(weather.hasBonus());
+  }
 }

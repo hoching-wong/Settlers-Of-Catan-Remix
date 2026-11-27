@@ -25,10 +25,11 @@ import javax.swing.SwingUtilities;
 
 /**
  * The start menu: number of players, their names, the city and the Start Game button.
- * It reads {@link StartMenuViewModel} and calls {@link StartGameController}. It never touches
- * the use cases or entities.
+ * It reads {@link StartMenuViewModel} and calls {@link StartGameController}.
+ * It never touches the use cases or entities.
  */
 public class StartMenuView extends JPanel implements PropertyChangeListener {
+
     static final int MIN_PLAYERS = 2;
     static final int MAX_PLAYERS = 4;
     static final String START_TEXT = "Start Game";
@@ -42,69 +43,100 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
     private final JComboBox<Integer> playerCountBox = new JComboBox<>();
     private final JLabel[] nameLabels = new JLabel[MAX_PLAYERS];
     private final JTextField[] nameFields = new JTextField[MAX_PLAYERS];
-    private final JComboBox<String> cityBox = new JComboBox<>();
+
+    private final WeatherSelectionPanel weatherPanel;
+
     private final JButton startButton = new JButton(START_TEXT);
-    private final JLabel errorLabel = new JLabel(" ", SwingConstants.CENTER);
+    private final JLabel errorLabel =
+            new JLabel(" ", SwingConstants.CENTER);
 
     /**
-     * @param backgroundExecutor runs the game start off the Swing thread, because it makes a
-     *     network request for the weather. Tests pass a direct executor.
+     * Constructs the start menu.
+     *
+     * @param viewModel the start menu view model
+     * @param controller the start game controller
+     * @param backgroundExecutor runs game startup off the Swing thread
      */
-    public StartMenuView(StartMenuViewModel viewModel, StartGameController controller,
-                         Executor backgroundExecutor) {
-        this.viewModel = Objects.requireNonNull(viewModel, "viewModel");
-        this.controller = Objects.requireNonNull(controller, "controller");
-        this.backgroundExecutor = Objects.requireNonNull(backgroundExecutor, "backgroundExecutor");
+    public StartMenuView(
+            StartMenuViewModel viewModel,
+            StartGameController controller,
+            Executor backgroundExecutor) {
+
+        this.viewModel = Objects.requireNonNull(
+                viewModel, "viewModel");
+        this.controller = Objects.requireNonNull(
+                controller, "controller");
+        this.backgroundExecutor = Objects.requireNonNull(
+                backgroundExecutor, "backgroundExecutor");
+
+        weatherPanel = new WeatherSelectionPanel(
+                viewModel.getCityNames());
+
         buildComponents();
         buildLayout();
+
         viewModel.addPropertyChangeListener(this);
         showError();
     }
 
+    /**
+     * Initializes the player inputs and start button.
+     */
     private void buildComponents() {
         playerCountBox.setName("playerCount");
+
         for (int n = MIN_PLAYERS; n <= MAX_PLAYERS; n++) {
             playerCountBox.addItem(n);
         }
-        playerCountBox.addActionListener(e -> updateNameFieldVisibility());
+
+        playerCountBox.addActionListener(
+                event -> updateNameFieldVisibility());
 
         for (int i = 0; i < MAX_PLAYERS; i++) {
-            nameLabels[i] = new JLabel("Player " + (i + 1) + " name:");
+            nameLabels[i] = new JLabel(
+                    "Player " + (i + 1) + " name:");
+
             nameFields[i] = new JTextField(16);
             nameFields[i].setName("name" + (i + 1));
         }
 
-        cityBox.setName("city");
-        for (String city : viewModel.getCityNames()) {
-            cityBox.addItem(city);
-        }
-        cityBox.setSelectedIndex(-1); // nothing chosen until the player picks a city
-
         startButton.setName("start");
-        startButton.addActionListener(e -> startGame());
+        startButton.addActionListener(event -> startGame());
 
         errorLabel.setName("startMenuError");
         errorLabel.setForeground(new Color(0xB00020));
     }
 
+    /**
+     * Arranges the components in the start menu.
+     */
     private void buildLayout() {
         setLayout(new GridBagLayout());
-        setBorder(BorderFactory.createEmptyBorder(24, 32, 24, 32));
+        setBorder(BorderFactory.createEmptyBorder(
+                24, 32, 24, 32));
 
-        JLabel title = new JLabel("Settlers of Catan Remix", SwingConstants.CENTER);
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 24f));
+        JLabel title = new JLabel(
+                "Settlers of Catan Remix",
+                SwingConstants.CENTER);
+
+        title.setFont(title.getFont().deriveFont(
+                Font.BOLD, 24f));
 
         GridBagConstraints c = new GridBagConstraints();
+
         c.insets = new Insets(6, 6, 6, 6);
         c.gridx = 0;
         c.gridy = 0;
         c.gridwidth = 2;
         c.fill = GridBagConstraints.HORIZONTAL;
+
         add(title, c);
 
         c.gridwidth = 1;
         c.gridy++;
+
         add(new JLabel("Number of players:"), c);
+
         c.gridx = 1;
         add(playerCountBox, c);
 
@@ -112,19 +144,23 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
             c.gridx = 0;
             c.gridy++;
             add(nameLabels[i], c);
+
             c.gridx = 1;
             add(nameFields[i], c);
         }
 
         c.gridx = 0;
         c.gridy++;
+
         add(new JLabel("City (sets the weather):"), c);
+
         c.gridx = 1;
-        add(cityBox, c);
+        add(weatherPanel, c);
 
         c.gridx = 0;
         c.gridy++;
         c.gridwidth = 2;
+
         add(errorLabel, c);
 
         c.gridy++;
@@ -133,34 +169,55 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
         updateNameFieldVisibility();
     }
 
-    // ---- reading the form ----
-
+    /**
+     * Returns the number of selected players.
+     *
+     * @return the selected player count
+     */
     private int selectedPlayerCount() {
-        Integer count = (Integer) playerCountBox.getSelectedItem();
+        Integer count =
+                (Integer) playerCountBox.getSelectedItem();
+
         return count == null ? MIN_PLAYERS : count;
     }
 
-    /** The names typed for the players that are shown, in order. Only the shown fields count. */
+    /**
+     * Returns the names entered for the selected players.
+     *
+     * @return the player names in order
+     */
     public List<String> getEnteredNames() {
         List<String> names = new ArrayList<>();
+
         for (int i = 0; i < selectedPlayerCount(); i++) {
             names.add(nameFields[i].getText());
         }
+
         return names;
     }
 
-    /** The chosen city, or null if none was chosen. */
+    /**
+     * Returns the city selected in the weather panel.
+     *
+     * @return the selected city, or null if none is selected
+     */
     public String getSelectedCity() {
-        return (String) cityBox.getSelectedItem();
+        return weatherPanel.getSelectedCity();
     }
 
+    /**
+     * Shows only the name fields needed for the selected players.
+     */
     private void updateNameFieldVisibility() {
         int count = selectedPlayerCount();
+
         for (int i = 0; i < MAX_PLAYERS; i++) {
             boolean shown = i < count;
+
             nameLabels[i].setVisible(shown);
             nameFields[i].setVisible(shown);
         }
+
         revalidate();
         repaint();
     }
@@ -173,16 +230,19 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
         this.generateBoardController = generateBoardController;
     }
 
-    // ---- acting ----
-
+    /**
+     * Starts a game using the selected players and city.
+     */
     private void startGame() {
         List<String> names = getEnteredNames();
         String city = getSelectedCity();
+
         if (generateBoardController != null) {
             generateBoardController.execute();
         }
         startButton.setEnabled(false);
         startButton.setText(STARTING_TEXT);
+
         backgroundExecutor.execute(() -> {
             try {
                 controller.startGame(names, city);
@@ -195,37 +255,57 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
         });
     }
 
-    // ---- reacting to the view model ----
-
+    /**
+     * Responds to changes in the start menu view model.
+     *
+     * @param event the property change event
+     */
     @Override
     public void propertyChange(PropertyChangeEvent event) {
-        // The presenter may run on a background thread, so always update on the Swing thread.
         String property = event.getPropertyName();
+
         if (SwingUtilities.isEventDispatchThread()) {
             handle(property);
         } else {
-            SwingUtilities.invokeLater(() -> handle(property));
+            SwingUtilities.invokeLater(
+                    () -> handle(property));
         }
     }
 
+    /**
+     * Handles view model updates.
+     *
+     * @param property the property that changed
+     */
     private void handle(String property) {
         showError();
-        // The menu was reset for a new game: forget what was typed for the last one.
-        if (StartMenuViewModel.SUMMARY.equals(property) && viewModel.getCityName().isEmpty()) {
+
+        if (StartMenuViewModel.SUMMARY.equals(property)
+                && viewModel.getCityName().isEmpty()) {
             clearForm();
         }
     }
 
+    /**
+     * Displays the current error message.
+     */
     private void showError() {
         String error = viewModel.getErrorMessage();
-        errorLabel.setText(error.isEmpty() ? " " : error);
+
+        errorLabel.setText(
+                error.isEmpty() ? " " : error);
     }
 
+    /**
+     * Clears the player names and selected city.
+     */
     private void clearForm() {
         playerCountBox.setSelectedItem(MIN_PLAYERS);
+
         for (JTextField field : nameFields) {
             field.setText("");
         }
-        cityBox.setSelectedIndex(-1);
+
+        weatherPanel.clearSelection();
     }
 }

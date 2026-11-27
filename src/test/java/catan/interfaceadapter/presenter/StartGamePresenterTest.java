@@ -7,6 +7,7 @@ import catan.entity.WeatherType;
 import catan.interfaceadapter.viewmodel.BoardState;
 import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel.Screen;
@@ -18,7 +19,10 @@ class StartGamePresenterTest {
     private final StartMenuViewModel startMenu = new StartMenuViewModel(List.of("Toronto"));
     private final GameViewModel game = new GameViewModel();
     private final ViewManagerModel viewManager = new ViewManagerModel();
-    private final StartGamePresenter presenter = new StartGamePresenter(startMenu, game, viewManager);
+    private final LongestRoadViewModel longestRoadViewModel = new LongestRoadViewModel();
+
+    private final StartGamePresenter presenter =
+            new StartGamePresenter(startMenu, game, viewManager, longestRoadViewModel);
 
     @Test
     void theFirstClickOnTheBoardPlacesASettlement() {
@@ -43,7 +47,7 @@ class StartGamePresenterTest {
 
     @Test
     void rejectsANullBoardViewModel() {
-        assertThrows(NullPointerException.class, () -> new StartGamePresenter(startMenu, game, viewManager, null));
+        assertThrows(NullPointerException.class, () -> new StartGamePresenter(startMenu, game, viewManager, (BoardViewModel) null));
     }
 
     @Test
@@ -116,8 +120,11 @@ class StartGamePresenterTest {
 
     @Test
     void rejectsNullViewModels() {
-        assertThrows(NullPointerException.class, () -> new StartGamePresenter(null, game, viewManager));
-        assertThrows(NullPointerException.class, () -> new StartGamePresenter(startMenu, null, viewManager));
-        assertThrows(NullPointerException.class, () -> new StartGamePresenter(startMenu, game, null));
+        assertThrows(NullPointerException.class,
+                () -> new StartGamePresenter(null, game, viewManager, longestRoadViewModel));
+        assertThrows(NullPointerException.class,
+                () -> new StartGamePresenter(startMenu, null, viewManager, longestRoadViewModel));
+        assertThrows(NullPointerException.class,
+                () -> new StartGamePresenter(startMenu, game, null, longestRoadViewModel));
     }
 }
