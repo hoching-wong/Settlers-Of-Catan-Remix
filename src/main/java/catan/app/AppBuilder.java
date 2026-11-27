@@ -6,6 +6,7 @@ import catan.framework.persistence.InMemoryBoardRepository;
 import catan.framework.persistence.InMemoryGameRepository;
 import catan.framework.ui.swing.BoardView;
 import catan.framework.ui.swing.GameOverView;
+import catan.framework.ui.swing.GameStatusPanel;
 import catan.framework.ui.swing.GameView;
 import catan.framework.ui.swing.InitialPlacementClickListener;
 import catan.framework.ui.swing.ScreenSwitcher;
@@ -18,6 +19,7 @@ import catan.interfaceadapter.controller.PlaceInitialController;
 import catan.interfaceadapter.controller.RestartGameController;
 import catan.interfaceadapter.controller.SelectStructureController;
 import catan.interfaceadapter.controller.StartGameController;
+import catan.interfaceadapter.controller.ViewGameStatusController;
 import catan.interfaceadapter.presenter.BuildPresenter;
 import catan.interfaceadapter.presenter.EndTurnPresenter;
 import catan.interfaceadapter.presenter.GameOverPresenter;
@@ -27,8 +29,10 @@ import catan.interfaceadapter.presenter.PlaceInitialPresenter;
 import catan.interfaceadapter.presenter.RestartGamePresenter;
 import catan.interfaceadapter.presenter.SelectStructurePresenter;
 import catan.interfaceadapter.presenter.StartGamePresenter;
+import catan.interfaceadapter.presenter.ViewGameStatusPresenter;
 import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
+import catan.interfaceadapter.viewmodel.GameStatusViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
@@ -44,6 +48,7 @@ import catan.usecase.port.GameRepository;
 import catan.usecase.restartgame.RestartGameInteractor;
 import catan.usecase.selectstructure.SelectStructureInteractor;
 import catan.usecase.startgame.StartGameInteractor;
+import catan.usecase.viewgamestatus.ViewGameStatusInteractor;
 import catan.usecase.weather.WeatherDataAccessInterface;
 import catan.usecase.weather.WeatherInputBoundary;
 import catan.usecase.weather.WeatherInteractor;
@@ -124,18 +129,49 @@ public class AppBuilder {
         WeatherInputBoundary weatherInteractor =
                 new WeatherInteractor(weatherDataAccessObject);
 
+        // UC5: View Game Status.
+        GameStatusViewModel statusViewModel =
+                new GameStatusViewModel();
+
+        ViewGameStatusPresenter statusPresenter =
+                new ViewGameStatusPresenter(statusViewModel);
+
+        ViewGameStatusController statusController =
+                new ViewGameStatusController(
+                        new ViewGameStatusInteractor(
+                                gameRepository, statusPresenter));
+
+        GameStatusPanel statusPanel =
+                new GameStatusPanel(statusViewModel, startMenu);
+
         // UC8: Start Game generates the board, and the game is then played on that same board.
         GenerateBoardController generateBoard = new GenerateBoardController(new GenerateBoardInteractor(
                 gameRepository, boardRepository, new GenerateBoardPresenter(boardViewModel),
                 new BalancedLayoutStrategy()));
 
-        StartGameController startGame = new StartGameController(new StartGameInteractor(
-                gameRepository, weatherInteractor, new StartGamePresenter(startMenu, game, viewManager,
-                boardViewModel, longestRoadViewModel),
-                random, boardRepository));
+        StartGameController startGame =
+                new StartGameController(
+                        new StartGameInteractor(
+                                gameRepository,
+                                weatherInteractor,
+                                new StartGamePresenter(
+                                        startMenu,
+                                        game,
+                                        viewManager,
+                                        boardViewModel,
+                                        longestRoadViewModel,
+                                        statusController::execute),
+                                random,
+                                boardRepository));
 
-        placeInitialController = new PlaceInitialController(
-                new PlaceInitialInteractor(gameRepository, new PlaceInitialPresenter(game, boardViewModel)));
+        placeInitialController =
+                new PlaceInitialController(
+                        new PlaceInitialInteractor(
+                                gameRepository,
+                                new PlaceInitialPresenter(
+                                        game,
+                                        boardViewModel,
+                                        statusController::execute)));
 
         // UC1: the build menu highlights where a structure can go, and a click there builds it.
         SelectStructureController selectStructure = new SelectStructureController(
@@ -147,15 +183,23 @@ public class AppBuilder {
         LongestRoadPresenter longestRoadPresenter =
                 new LongestRoadPresenter(longestRoadViewModel);
 
-        BuildController build = new BuildController(
-                new BuildInteractor(gameRepository,
-                        new BuildPresenter(boardViewModel, longestRoadPresenter),
-                        longestRoadInteractor));
+        BuildController build =
+                new BuildController(
+                        new BuildInteractor(
+                                gameRepository,
+                                new BuildPresenter(
+                                        boardViewModel,
+                                        longestRoadPresenter,
+                                        statusController::execute),
+                                longestRoadInteractor));
 
-        EndTurnController endTurn = new EndTurnController(
-                new EndTurnInteractor(
-                        gameRepository,
-                        new EndTurnPresenter(game)));
+        EndTurnController endTurn =
+                new EndTurnController(
+                        new EndTurnInteractor(
+                                gameRepository,
+                                new EndTurnPresenter(
+                                        game,
+                                        statusController::execute)));
 
         RestartGameController restartGame = new RestartGameController(
                 new RestartGameInteractor(
@@ -176,6 +220,8 @@ public class AppBuilder {
 
         gameView = new GameView(game, endTurn, longestRoadViewModel);
         gameView.setBoardComponent(boardView);
+        gameView.setGameStatusPanel(statusPanel);
+
         GameOverView gameOverView = new GameOverView(gameOver, restartGame);
 
         return new ScreenSwitcher(viewManager, startMenuView, gameView, gameOverView);

@@ -50,6 +50,7 @@ public class GameView extends JPanel implements PropertyChangeListener {
         this.endTurnController = Objects.requireNonNull(endTurnController, "endTurnController");
         this.longestRoadPanel = longestRoadViewModel == null
                 ? null : new LongestRoadPanel(longestRoadViewModel);
+
         buildLayout();
         viewModel.addPropertyChangeListener(this);
         refresh();
@@ -87,8 +88,6 @@ public class GameView extends JPanel implements PropertyChangeListener {
         add(boardSlot, BorderLayout.CENTER);
 
         if (longestRoadPanel != null) {
-            longestRoadPanel.setBorder(
-                    BorderFactory.createEmptyBorder(8, 12, 8, 8));
             longestRoadPanel.setPreferredSize(new Dimension(320, 150));
             sidePanel.add(longestRoadPanel, BorderLayout.NORTH);
             add(sidePanel, BorderLayout.EAST);
@@ -115,7 +114,8 @@ public class GameView extends JPanel implements PropertyChangeListener {
     }
 
     /**
-     * Adds the game status panel below the Longest Road panel.
+     * Adds the game status panel to the right side of the game screen.
+     * Embeds the Longest Road panel into the game overview when available.
      *
      * @param statusPanel the panel displaying the current game status
      */
@@ -130,6 +130,16 @@ public class GameView extends JPanel implements PropertyChangeListener {
 
         if (previousPanel != null) {
             sidePanel.remove(previousPanel);
+        }
+
+        if (longestRoadPanel != null) {
+            if (statusPanel instanceof GameStatusPanel gameStatusPanel) {
+                longestRoadPanel.setPreferredSize(null);
+                gameStatusPanel.setLongestRoadPanel(longestRoadPanel);
+            } else {
+                longestRoadPanel.setPreferredSize(new Dimension(320, 150));
+                sidePanel.add(longestRoadPanel, BorderLayout.NORTH);
+            }
         }
 
         sidePanel.add(statusPanel, BorderLayout.CENTER);

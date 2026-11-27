@@ -7,16 +7,36 @@ import catan.usecase.build.BuildOutputData;
 import catan.usecase.longestroad.LongestRoadOutputBoundary;
 import catan.usecase.longestroad.LongestRoadOutputData;
 import java.util.Locale;
+import java.util.Objects;
 
 /** Redraws the board after a build, or shows why the build was rejected. */
 public class BuildPresenter implements BuildOutputBoundary {
     private final BoardViewModel viewModel;
     private final LongestRoadOutputBoundary longestRoadPresenter;
+    private final Runnable refreshGameStatus;
+
+    public BuildPresenter(BoardViewModel viewModel) {
+        this(viewModel, outputData -> {}, () -> {});
+    }
+
+    public BuildPresenter(BoardViewModel viewModel,
+                          Runnable refreshGameStatus) {
+        this(viewModel, outputData -> {}, refreshGameStatus);
+    }
 
     public BuildPresenter(BoardViewModel viewModel,
                           LongestRoadOutputBoundary longestRoadPresenter) {
+        this(viewModel, longestRoadPresenter, () -> {});
+    }
+
+    public BuildPresenter(BoardViewModel viewModel,
+                          LongestRoadOutputBoundary longestRoadPresenter,
+                          Runnable refreshGameStatus) {
         this.viewModel = viewModel;
-        this.longestRoadPresenter = longestRoadPresenter;
+        this.longestRoadPresenter =
+                Objects.requireNonNull(longestRoadPresenter, "longestRoadPresenter");
+        this.refreshGameStatus =
+                Objects.requireNonNull(refreshGameStatus, "refreshGameStatus");
     }
 
     @Override
@@ -41,6 +61,7 @@ public class BuildPresenter implements BuildOutputBoundary {
                 outputData.longestRoadLength()));
 
         viewModel.firePropertyChanged();
+        refreshGameStatus.run();
     }
 
     /** The selection and highlights stay, so the player can simply click somewhere else. */

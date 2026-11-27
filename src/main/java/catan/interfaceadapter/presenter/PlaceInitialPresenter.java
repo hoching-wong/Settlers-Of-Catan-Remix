@@ -20,6 +20,7 @@ import java.util.Objects;
 public class PlaceInitialPresenter implements PlaceInitialOutputBoundary {
     private final GameViewModel game;
     private final BoardViewModel board;
+    private final Runnable refreshGameStatus;
 
     /** For a screen without a board view. */
     public PlaceInitialPresenter(GameViewModel game) {
@@ -27,8 +28,15 @@ public class PlaceInitialPresenter implements PlaceInitialOutputBoundary {
     }
 
     public PlaceInitialPresenter(GameViewModel game, BoardViewModel board) {
+        this(game, board, () -> {});
+    }
+
+    public PlaceInitialPresenter(GameViewModel game, BoardViewModel board,
+                                 Runnable refreshGameStatus) {
         this.game = Objects.requireNonNull(game, "game");
         this.board = Objects.requireNonNull(board, "board");
+        this.refreshGameStatus =
+                Objects.requireNonNull(refreshGameStatus, "refreshGameStatus");
     }
 
     @Override
@@ -48,6 +56,7 @@ public class PlaceInitialPresenter implements PlaceInitialOutputBoundary {
         BoardStateMapper.applySnapshot(state, out.board());
         state.setSetupTarget(setupTarget(out));
         board.firePropertyChanged();
+        refreshGameStatus.run();
     }
 
     /** What the next click on the board places, or null once regular play has begun. */
