@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+
 import org.junit.jupiter.api.Test;
 
 class GameTest {
@@ -23,7 +24,9 @@ class GameTest {
         return new Game(board, players(n), WeatherData.none(), new Dice(new Random(1)));
     }
 
-    /** Places a settlement then a road for the current player, driving the game through the rules. */
+    /**
+     * Places a settlement then a road for the current player, driving the game through the rules.
+     */
     private void placeSetupTurn(Game g) {
         Player p = g.getCurrentPlayer();
         Vertex spot = null;

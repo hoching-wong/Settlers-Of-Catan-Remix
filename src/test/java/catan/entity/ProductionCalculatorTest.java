@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
 import org.junit.jupiter.api.Test;
 
 class ProductionCalculatorTest {
@@ -20,7 +21,9 @@ class ProductionCalculatorTest {
         return v;
     }
 
-    /** A tile with its own 6 vertices, plus any shared ones swapped in at the start. */
+    /**
+     * A tile with its own 6 vertices, plus any shared ones swapped in at the start.
+     */
     private Tile tile(TerrainType terrain, int token, Vertex... shared) {
         Tile t = new Tile(tiles.size(), terrain, token);
         for (Vertex v : shared) {
@@ -104,7 +107,7 @@ class ProductionCalculatorTest {
 
     @Test
     void sevenProducesNothing() {
-        for (TerrainType terrain : new TerrainType[] {TerrainType.FOREST, TerrainType.HILLS}) {
+        for (TerrainType terrain : new TerrainType[]{TerrainType.FOREST, TerrainType.HILLS}) {
             Tile t = tile(terrain, 6);
             settle(ann, t.getVertices().get(0));
         }

@@ -27,11 +27,12 @@ import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel.Screen;
 import catan.usecase.endturn.EndTurnInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
-import catan.usecase.port.WeatherGateway;
-import catan.usecase.port.WeatherUnavailableException;
 import catan.usecase.restartgame.GameResult;
 import catan.usecase.restartgame.RestartGameInteractor;
 import catan.usecase.startgame.StartGameInteractor;
+import catan.usecase.weather.WeatherDataAccessInterface;
+import catan.usecase.weather.WeatherInteractor;
+import catan.usecase.weather.WeatherUnavailableException;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,7 @@ class GameFlowTest {
     private final GameOverViewModel gameOverView = new GameOverViewModel();
     private final ViewManagerModel viewManager = new ViewManagerModel();
 
-    private final WeatherGateway weather = city -> {
+    private final WeatherDataAccessInterface weather = city -> {
         if (weatherDown) {
             throw new WeatherUnavailableException("offline");
         }
@@ -58,7 +59,9 @@ class GameFlowTest {
     };
 
     private final StartGameController startGame = new StartGameController(new StartGameInteractor(
-            repository, weather, new StartGamePresenter(startMenu, gameView, viewManager), new Random(8)));
+            repository, new WeatherInteractor(weather),
+            new StartGamePresenter(startMenu, gameView, viewManager), new Random(8)));
+
     private final PlaceInitialController placeInitial = new PlaceInitialController(
             new PlaceInitialInteractor(repository, new PlaceInitialPresenter(gameView)));
     private final EndTurnController endTurn = new EndTurnController(

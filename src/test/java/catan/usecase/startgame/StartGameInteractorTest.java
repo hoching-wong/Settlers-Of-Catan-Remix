@@ -21,8 +21,9 @@ import catan.entity.WeatherData;
 import catan.entity.WeatherType;
 import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
-import catan.usecase.port.WeatherGateway;
-import catan.usecase.port.WeatherUnavailableException;
+import catan.usecase.weather.WeatherDataAccessInterface;
+import catan.usecase.weather.WeatherInteractor;
+import catan.usecase.weather.WeatherUnavailableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -56,7 +57,7 @@ class StartGameInteractorTest {
         }
     }
 
-    private static class FakeWeatherGateway implements WeatherGateway {
+    private static class FakeWeatherDataAccessObject implements WeatherDataAccessInterface {
         int code;
         boolean fail;
         int calls;
@@ -103,10 +104,11 @@ class StartGameInteractorTest {
     }
 
     private final FakeGameRepository repository = new FakeGameRepository();
-    private final FakeWeatherGateway weather = new FakeWeatherGateway();
+    private final FakeWeatherDataAccessObject weather = new FakeWeatherDataAccessObject();
+    private final WeatherInteractor weatherInteractor = new WeatherInteractor(weather);
     private final RecordingPresenter presenter = new RecordingPresenter();
     private final StartGameInteractor interactor =
-            new StartGameInteractor(repository, weather, presenter, new Random(1));
+            new StartGameInteractor(repository, weatherInteractor, presenter, new Random(1));
 
     private void start(String city, String... names) {
         interactor.startGame(new StartGameInputData(Arrays.asList(names), city));
@@ -127,7 +129,7 @@ class StartGameInteractorTest {
         for (int n = 2; n <= 4; n++) {
             FakeGameRepository repo = new FakeGameRepository();
             RecordingPresenter out = new RecordingPresenter();
-            StartGameInteractor interactor = new StartGameInteractor(repo, weather, out, new Random(1));
+            StartGameInteractor interactor = new StartGameInteractor(repo, weatherInteractor, out, new Random(1));
             List<String> names = List.of("Ann", "Bob", "Cat", "Dan").subList(0, n);
 
             interactor.startGame(new StartGameInputData(names, "Toronto"));
@@ -184,7 +186,7 @@ class StartGameInteractorTest {
     }
 
     @Test
-    void theGatewayGetsTheSelectedCitysCoordinates() {
+    void theWeatherDataAccessObjectGetsTheSelectedCitysCoordinates() {
         start("Tokyo", "Ann", "Bob");
         CityLocation tokyo = CityLocation.defaults().stream()
                 .filter(c -> c.getName().equals("Tokyo")).findFirst().orElseThrow();
@@ -260,11 +262,11 @@ class StartGameInteractorTest {
 
     @ParameterizedTest
     @CsvSource({
-        "0, SUNNY, LUMBER", "1, SUNNY, LUMBER",
-        "2, CLOUDY, BRICK", "3, CLOUDY, BRICK",
-        "61, RAINY, GRAIN", "82, RAINY, GRAIN",
-        "71, SNOWY, WOOL", "86, SNOWY, WOOL",
-        "95, STORMY, ORE", "99, STORMY, ORE"})
+            "0, SUNNY, LUMBER", "1, SUNNY, LUMBER",
+            "2, CLOUDY, BRICK", "3, CLOUDY, BRICK",
+            "61, RAINY, GRAIN", "82, RAINY, GRAIN",
+            "71, SNOWY, WOOL", "86, SNOWY, WOOL",
+            "95, STORMY, ORE", "99, STORMY, ORE"})
     void weatherCodeGivesTheBonus(int code, WeatherType condition, ResourceType resource) {
         weather.code = code;
         start("Toronto", "Ann", "Bob");
@@ -422,9 +424,9 @@ class StartGameInteractorTest {
     void theSameSeedGivesTheSameBoardAndDice() {
         FakeGameRepository repoA = new FakeGameRepository();
         FakeGameRepository repoB = new FakeGameRepository();
-        new StartGameInteractor(repoA, weather, new RecordingPresenter(), new Random(5))
+        new StartGameInteractor(repoA, weatherInteractor, new RecordingPresenter(), new Random(5))
                 .startGame(new StartGameInputData(List.of("Ann", "Bob"), "Toronto"));
-        new StartGameInteractor(repoB, weather, new RecordingPresenter(), new Random(5))
+        new StartGameInteractor(repoB, weatherInteractor, new RecordingPresenter(), new Random(5))
                 .startGame(new StartGameInputData(List.of("Ann", "Bob"), "Toronto"));
         assertEquals(layout(repoA.get()), layout(repoB.get()));
 
@@ -438,7 +440,7 @@ class StartGameInteractorTest {
         List<String> layouts = new ArrayList<>();
         for (long seed = 0; seed < 5; seed++) {
             FakeGameRepository repo = new FakeGameRepository();
-            new StartGameInteractor(repo, weather, new RecordingPresenter(), new Random(seed))
+            new StartGameInteractor(repo, weatherInteractor, new RecordingPresenter(), new Random(seed))
                     .startGame(new StartGameInputData(List.of("Ann", "Bob"), "Toronto"));
             layouts.add(layout(repo.get()));
         }
@@ -448,7 +450,7 @@ class StartGameInteractorTest {
     @Test
     void theBoardMatchesTheOneBoardFactoryMakesForTheSameSeed() {
         FakeGameRepository repo = new FakeGameRepository();
-        new StartGameInteractor(repo, weather, new RecordingPresenter(), new Random(9))
+        new StartGameInteractor(repo, weatherInteractor, new RecordingPresenter(), new Random(9))
                 .startGame(new StartGameInputData(List.of("Ann", "Bob"), "Toronto"));
         Game expected = new Game(BoardFactory.createStandardBoard(new Random(9)),
                 List.of(new Player("x"), new Player("y")), WeatherData.none(), new Dice(new Random(9)));
@@ -463,7 +465,7 @@ class StartGameInteractorTest {
         Board generated = BoardFactory.createStandardBoard(new Random(3));
         boards.saveBoard(generated);
         StartGameInteractor withBoards =
-                new StartGameInteractor(repository, weather, presenter, new Random(1), boards);
+                new StartGameInteractor(repository, weatherInteractor, presenter, new Random(1), boards);
 
         withBoards.startGame(new StartGameInputData(List.of("Ann", "Bob"), "Toronto"));
 
@@ -474,7 +476,7 @@ class StartGameInteractorTest {
     @Test
     void withoutAGeneratedBoardARandomOneIsMade() {
         FakeBoardRepository boards = new FakeBoardRepository();
-        new StartGameInteractor(repository, weather, presenter, new Random(9), boards)
+        new StartGameInteractor(repository, weatherInteractor, presenter, new Random(9), boards)
                 .startGame(new StartGameInputData(List.of("Ann", "Bob"), "Toronto"));
         Game expected = new Game(BoardFactory.createStandardBoard(new Random(9)),
                 List.of(new Player("x"), new Player("y")), WeatherData.none(), new Dice(new Random(9)));
@@ -486,7 +488,7 @@ class StartGameInteractorTest {
         FakeBoardRepository boards = new FakeBoardRepository();
         Board generated = BoardFactory.createStandardBoard(new Random(3));
         boards.saveBoard(generated);
-        new StartGameInteractor(repository, weather, presenter, new Random(1), boards)
+        new StartGameInteractor(repository, weatherInteractor, presenter, new Random(1), boards)
                 .startGame(new StartGameInputData(List.of("Ann", "Ann"), "Toronto"));
         assertEquals(1, presenter.errors.size());
         assertSame(generated, boards.getBoard());
@@ -495,7 +497,7 @@ class StartGameInteractorTest {
     @Test
     void rejectsANullBoardRepository() {
         assertThrows(NullPointerException.class,
-                () -> new StartGameInteractor(repository, weather, presenter, new Random(), null));
+                () -> new StartGameInteractor(repository, weatherInteractor, presenter, new Random(), null));
     }
 
     @Test
@@ -510,13 +512,13 @@ class StartGameInteractorTest {
     @Test
     void constructorAndInputRejectNulls() {
         assertThrows(NullPointerException.class,
-                () -> new StartGameInteractor(null, weather, presenter, new Random()));
+                () -> new StartGameInteractor(null, weatherInteractor, presenter, new Random()));
         assertThrows(NullPointerException.class,
                 () -> new StartGameInteractor(repository, null, presenter, new Random()));
         assertThrows(NullPointerException.class,
-                () -> new StartGameInteractor(repository, weather, null, new Random()));
+                () -> new StartGameInteractor(repository, weatherInteractor, null, new Random()));
         assertThrows(NullPointerException.class,
-                () -> new StartGameInteractor(repository, weather, presenter, null));
+                () -> new StartGameInteractor(repository, weatherInteractor, presenter, null));
         assertThrows(NullPointerException.class, () -> interactor.startGame(null));
     }
 }
