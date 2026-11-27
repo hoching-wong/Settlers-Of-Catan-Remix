@@ -1,9 +1,11 @@
 package catan.framework.ui.swing;
 
 import catan.interfaceadapter.controller.EndTurnController;
+import catan.interfaceadapter.controller.RollDiceController;
 import catan.interfaceadapter.viewmodel.GameViewModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -19,12 +21,13 @@ import javax.swing.SwingUtilities;
 
 /**
  * The game screen: whose turn it is and what they should do, the weather and its bonus, the
- * latest message, and the End Turn button. The board goes in the middle once there is a board
+ * latest message, and the Roll Dice and End Turn buttons. The board goes in the middle once there is a board
  * view: see {@link #setBoardComponent(JComponent)}.
  */
 public class GameView extends JPanel implements PropertyChangeListener {
     private final GameViewModel viewModel;
     private final EndTurnController endTurnController;
+    private RollDiceController rollDiceController;
 
     private final JLabel turnLabel = new JLabel(" ");
     private final JLabel instructionLabel = new JLabel(" ");
@@ -32,6 +35,7 @@ public class GameView extends JPanel implements PropertyChangeListener {
     private final JLabel weatherLabel = new JLabel(" ");
     private final JLabel messageLabel = new JLabel(" ", SwingConstants.CENTER);
     private final JLabel errorLabel = new JLabel(" ", SwingConstants.CENTER);
+    private final JButton rollDiceButton = new JButton("Roll Dice");
     private final JButton endTurnButton = new JButton("End Turn");
     private final JPanel boardSlot = new JPanel(new BorderLayout());
 
@@ -56,6 +60,12 @@ public class GameView extends JPanel implements PropertyChangeListener {
         messageLabel.setName("message");
         errorLabel.setName("gameError");
         errorLabel.setForeground(new Color(0xB00020));
+        rollDiceButton.setName("rollDice");
+        rollDiceButton.addActionListener(e -> {
+            if (rollDiceController != null) {
+                rollDiceController.rollDice();
+            }
+        });
         endTurnButton.setName("endTurn");
         endTurnButton.addActionListener(e -> endTurnController.endTurn());
 
@@ -78,11 +88,19 @@ public class GameView extends JPanel implements PropertyChangeListener {
         footer.setLayout(new BoxLayout(footer, BoxLayout.Y_AXIS));
         messageLabel.setAlignmentX(CENTER_ALIGNMENT);
         errorLabel.setAlignmentX(CENTER_ALIGNMENT);
-        endTurnButton.setAlignmentX(CENTER_ALIGNMENT);
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttons.setAlignmentX(CENTER_ALIGNMENT);
+        buttons.add(rollDiceButton);
+        buttons.add(endTurnButton);
         footer.add(messageLabel);
         footer.add(errorLabel);
-        footer.add(endTurnButton);
+        footer.add(buttons);
         add(footer, BorderLayout.SOUTH);
+    }
+
+    /** What the Roll Dice button calls. Until it is set, the button does nothing. */
+    public void setRollDiceController(RollDiceController controller) {
+        this.rollDiceController = Objects.requireNonNull(controller, "controller");
     }
 
     /** Puts the board view in the middle of the screen, in place of the placeholder. */
