@@ -65,7 +65,7 @@ catan/
 ## Conventions
 
 - Write JUnit 5 tests next to every new class, in `src/test/java` under the same package.
-- Interactors are tested with fake `GameRepository` and `WeatherDataAccessInterface` implementations, not real ones.
+- Interactors are tested with fake `GameRepository` and `WeatherGateway` implementations, not real ones.
 - Pass `Random` into `Dice` and `BoardFactory` so tests can use a seeded one.
 - Do not change a shared entity's public method signature without checking the README and telling the team.
 - Keep commits small. One use case per branch.

@@ -11,23 +11,12 @@ import catan.framework.ui.swing.InitialPlacementClickListener;
 import catan.framework.ui.swing.ScreenSwitcher;
 import catan.framework.ui.swing.StartMenuView;
 import catan.framework.weather.OpenMeteoWeatherDataAccessObject;
-import catan.interfaceadapter.controller.BuildController;
-import catan.interfaceadapter.controller.EndTurnController;
-import catan.interfaceadapter.controller.GenerateBoardController;
-import catan.interfaceadapter.controller.PlaceInitialController;
-import catan.interfaceadapter.controller.RestartGameController;
-import catan.interfaceadapter.controller.SelectStructureController;
-import catan.interfaceadapter.controller.StartGameController;
-import catan.interfaceadapter.presenter.BuildPresenter;
-import catan.interfaceadapter.presenter.EndTurnPresenter;
-import catan.interfaceadapter.presenter.GameOverPresenter;
-import catan.interfaceadapter.presenter.GenerateBoardPresenter;
-import catan.interfaceadapter.presenter.LongestRoadPresenter;
-import catan.interfaceadapter.presenter.PlaceInitialPresenter;
-import catan.interfaceadapter.presenter.RestartGamePresenter;
-import catan.interfaceadapter.presenter.SelectStructurePresenter;
-import catan.interfaceadapter.presenter.StartGamePresenter;
+import catan.interfaceadapter.controller.*;
+import catan.interfaceadapter.presenter.*;
+import catan.interfaceadapter.controller.RollDiceController;
 import catan.interfaceadapter.viewmodel.BoardViewModel;
+import catan.interfaceadapter.presenter.LongestRoadPresenter;
+import catan.interfaceadapter.presenter.RollDicePresenter;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
@@ -41,7 +30,11 @@ import catan.usecase.longestroad.LongestRoadInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
+import catan.usecase.port.WeatherGateway;
+import catan.usecase.port.WeatherUnavailableException;
 import catan.usecase.restartgame.RestartGameInteractor;
+import catan.usecase.rolldice.RollDiceInteractor;
+import catan.usecase.rolldice.RollDiceInteractor;
 import catan.usecase.selectstructure.SelectStructureInteractor;
 import catan.usecase.startgame.StartGameInteractor;
 import catan.usecase.weather.WeatherDataAccessInterface;
@@ -151,7 +144,9 @@ public class AppBuilder {
                 new BuildInteractor(gameRepository,
                         new BuildPresenter(boardViewModel, longestRoadPresenter),
                         longestRoadInteractor));
-
+        // UC2: the Roll Dice button rolls for the current player and hands out the resources.
+        RollDiceController rollDice = new RollDiceController(
+                new RollDiceInteractor(gameRepository, new RollDicePresenter(game)));
         EndTurnController endTurn = new EndTurnController(
                 new EndTurnInteractor(
                         gameRepository,
@@ -174,7 +169,8 @@ public class AppBuilder {
         boardView.getBoardPanel().addClickListener(
                 new InitialPlacementClickListener(boardViewModel, placeInitialController));
 
-        gameView = new GameView(game, endTurn, longestRoadViewModel);
+        gameView = new GameView(game, endTurn);
+        gameView.setRollDiceController(rollDice);
         gameView.setBoardComponent(boardView);
         GameOverView gameOverView = new GameOverView(gameOver, restartGame);
 
@@ -260,5 +256,17 @@ public class AppBuilder {
             thread.setDaemon(true);
             return thread;
         });
+    }
+
+    /**
+     * Stand-in until the Open-Meteo gateway exists in framework.weather. Every request reports
+     * that the weather is unavailable, so games start with normal resource production.
+     * TODO: replace with OpenMeteoWeatherGateway.
+     */
+    private static final class WeatherNotConnected implements WeatherGateway {
+        @Override
+        public int fetchWeatherCode(CityLocation city) throws WeatherUnavailableException {
+            throw new WeatherUnavailableException("The weather service is not connected yet");
+        }
     }
 }
