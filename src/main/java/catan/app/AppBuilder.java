@@ -11,6 +11,7 @@ import catan.framework.ui.swing.GameView;
 import catan.framework.ui.swing.InitialPlacementClickListener;
 import catan.framework.ui.swing.ScreenSwitcher;
 import catan.framework.ui.swing.StartMenuView;
+import catan.framework.weather.OpenMeteoWeatherDataAccessObject;
 import catan.interfaceadapter.controller.BuildController;
 import catan.interfaceadapter.controller.EndTurnController;
 import catan.interfaceadapter.controller.GenerateBoardController;
@@ -23,6 +24,7 @@ import catan.interfaceadapter.presenter.BuildPresenter;
 import catan.interfaceadapter.presenter.EndTurnPresenter;
 import catan.interfaceadapter.presenter.GameOverPresenter;
 import catan.interfaceadapter.presenter.GenerateBoardPresenter;
+import catan.interfaceadapter.presenter.LongestRoadPresenter;
 import catan.interfaceadapter.presenter.PlaceInitialPresenter;
 import catan.interfaceadapter.presenter.RestartGamePresenter;
 import catan.interfaceadapter.presenter.SelectStructurePresenter;
@@ -32,20 +34,24 @@ import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.GameStatusViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.usecase.build.BuildInteractor;
 import catan.usecase.endturn.EndTurnInteractor;
 import catan.usecase.generateboard.GenerateBoardInteractor;
+import catan.usecase.longestroad.LongestRoadInputBoundary;
+import catan.usecase.longestroad.LongestRoadInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
-import catan.usecase.port.WeatherGateway;
-import catan.usecase.port.WeatherUnavailableException;
 import catan.usecase.restartgame.RestartGameInteractor;
 import catan.usecase.selectstructure.SelectStructureInteractor;
 import catan.usecase.startgame.StartGameInteractor;
 import catan.usecase.viewgamestatus.ViewGameStatusInteractor;
+import catan.usecase.weather.WeatherDataAccessInterface;
+import catan.usecase.weather.WeatherInputBoundary;
+import catan.usecase.weather.WeatherInteractor;
 import java.awt.Dimension;
 import java.util.Objects;
 import java.util.Random;
@@ -55,47 +61,59 @@ import java.util.concurrent.Executors;
 import javax.swing.JFrame;
 
 /**
- * The only place where the concrete classes are created
- * and connected to each other.
- * Everything else depends on interfaces.
+ * The only place where the concrete classes are created and
+ * connected to each other. Everything else depends on interfaces.
  */
 public class AppBuilder {
 
     private final Random random;
-    private final WeatherGateway weatherGateway;
+    private final WeatherDataAccessInterface weatherDataAccessObject;
     private final GameRepository gameRepository;
     private final Executor backgroundExecutor;
 
     private GameView gameView;
     private BoardViewModel boardViewModel;
     private PlaceInitialController placeInitialController;
+    private LongestRoadViewModel longestRoadViewModel;
     private GameOverPresenter gameOverPresenter;
 
-    /** The application as it runs. */
+    /**
+     * Creates the application with the Open-Meteo weather service.
+     */
     public AppBuilder() {
-        this(new Random(), new WeatherNotConnected(),
+        this(new Random(), new OpenMeteoWeatherDataAccessObject(),
                 new InMemoryGameRepository(), daemonExecutor());
     }
 
-    /** For tests and for plugging in the real weather gateway. */
+    /**
+     * Creates the application with configurable dependencies.
+     *
+     * @param random the random number generator
+     * @param weatherDataAccessObject the weather data access object
+     * @param gameRepository the game repository
+     * @param backgroundExecutor the background executor
+     */
     public AppBuilder(
             Random random,
-            WeatherGateway weatherGateway,
+            WeatherDataAccessInterface weatherDataAccessObject,
             GameRepository gameRepository,
             Executor backgroundExecutor) {
 
         this.random = Objects.requireNonNull(random, "random");
-        this.weatherGateway = Objects.requireNonNull(
-                weatherGateway, "weatherGateway");
+        this.weatherDataAccessObject = Objects.requireNonNull(
+                weatherDataAccessObject, "weatherDataAccessObject");
         this.gameRepository = Objects.requireNonNull(
                 gameRepository, "gameRepository");
         this.backgroundExecutor = Objects.requireNonNull(
                 backgroundExecutor, "backgroundExecutor");
     }
 
-    /** Creates every screen and connects them. */
+    /**
+     * Creates every screen and connects the components.
+     *
+     * @return the screen switcher
+     */
     public ScreenSwitcher buildScreens() {
-
         StartMenuViewModel startMenu = new StartMenuViewModel(
                 CityLocation.defaults().stream()
                         .map(CityLocation::getName)
@@ -104,10 +122,12 @@ public class AppBuilder {
         GameViewModel game = new GameViewModel();
         GameOverViewModel gameOver = new GameOverViewModel();
         ViewManagerModel viewManager = new ViewManagerModel();
-
+        longestRoadViewModel = new LongestRoadViewModel();
         boardViewModel = new BoardViewModel();
-        BoardRepository boardRepository =
-                new InMemoryBoardRepository();
+        BoardRepository boardRepository = new InMemoryBoardRepository();
+
+        WeatherInputBoundary weatherInteractor =
+                new WeatherInteractor(weatherDataAccessObject);
 
         // UC5: View Game Status.
         GameStatusViewModel statusViewModel =
@@ -124,25 +144,22 @@ public class AppBuilder {
         GameStatusPanel statusPanel =
                 new GameStatusPanel(statusViewModel, startMenu);
 
-        // UC8: Generate the board used by the game.
-        GenerateBoardController generateBoard =
-                new GenerateBoardController(
-                        new GenerateBoardInteractor(
-                                gameRepository,
-                                boardRepository,
-                                new GenerateBoardPresenter(boardViewModel),
-                                new BalancedLayoutStrategy()));
+        // UC8: Start Game generates the board, and the game is then played on that same board.
+        GenerateBoardController generateBoard = new GenerateBoardController(new GenerateBoardInteractor(
+                gameRepository, boardRepository, new GenerateBoardPresenter(boardViewModel),
+                new BalancedLayoutStrategy()));
 
         StartGameController startGame =
                 new StartGameController(
                         new StartGameInteractor(
                                 gameRepository,
-                                weatherGateway,
+                                weatherInteractor,
                                 new StartGamePresenter(
                                         startMenu,
                                         game,
                                         viewManager,
                                         boardViewModel,
+                                        longestRoadViewModel,
                                         statusController::execute),
                                 random,
                                 boardRepository));
@@ -156,13 +173,15 @@ public class AppBuilder {
                                         boardViewModel,
                                         statusController::execute)));
 
-        // UC1: Select and build structures.
-        SelectStructureController selectStructure =
-                new SelectStructureController(
-                        new SelectStructureInteractor(
-                                gameRepository,
-                                new SelectStructurePresenter(
-                                        boardViewModel)));
+        // UC1: the build menu highlights where a structure can go, and a click there builds it.
+        SelectStructureController selectStructure = new SelectStructureController(
+                new SelectStructureInteractor(gameRepository, new SelectStructurePresenter(boardViewModel)));
+
+        LongestRoadInputBoundary longestRoadInteractor =
+                new LongestRoadInteractor();
+
+        LongestRoadPresenter longestRoadPresenter =
+                new LongestRoadPresenter(longestRoadViewModel);
 
         BuildController build =
                 new BuildController(
@@ -170,7 +189,9 @@ public class AppBuilder {
                                 gameRepository,
                                 new BuildPresenter(
                                         boardViewModel,
-                                        statusController::execute)));
+                                        longestRoadPresenter,
+                                        statusController::execute),
+                                longestRoadInteractor));
 
         EndTurnController endTurn =
                 new EndTurnController(
@@ -180,118 +201,110 @@ public class AppBuilder {
                                         game,
                                         statusController::execute)));
 
-        RestartGameController restartGame =
-                new RestartGameController(
-                        new RestartGameInteractor(
-                                gameRepository,
-                                new RestartGamePresenter(
-                                        startMenu,
-                                        game,
-                                        gameOver,
-                                        viewManager)));
+        RestartGameController restartGame = new RestartGameController(
+                new RestartGameInteractor(
+                        gameRepository,
+                        new RestartGamePresenter(
+                                startMenu, game, gameOver, viewManager)));
 
-        gameOverPresenter =
-                new GameOverPresenter(gameOver, viewManager);
+        gameOverPresenter = new GameOverPresenter(gameOver, viewManager);
 
-        StartMenuView startMenuView =
-                new StartMenuView(
-                        startMenu, startGame, backgroundExecutor);
-
+        StartMenuView startMenuView = new StartMenuView(startMenu, startGame, backgroundExecutor);
         startMenuView.setGenerateBoardController(generateBoard);
 
         BoardView boardView = new BoardView(boardViewModel);
-
         boardView.setSelectStructureController(selectStructure);
         boardView.setBuildController(build);
-
         boardView.getBoardPanel().addClickListener(
-                new InitialPlacementClickListener(
-                        boardViewModel, placeInitialController));
+                new InitialPlacementClickListener(boardViewModel, placeInitialController));
 
-        gameView = new GameView(game, endTurn);
-
-        // Connect the board and the game status panel.
+        gameView = new GameView(game, endTurn, longestRoadViewModel);
         gameView.setBoardComponent(boardView);
         gameView.setGameStatusPanel(statusPanel);
 
-        GameOverView gameOverView =
-                new GameOverView(gameOver, restartGame);
+        GameOverView gameOverView = new GameOverView(gameOver, restartGame);
 
-        return new ScreenSwitcher(
-                viewManager,
-                startMenuView,
-                gameView,
-                gameOverView);
+        return new ScreenSwitcher(viewManager, startMenuView, gameView, gameOverView);
     }
 
-    /** The application window. Needs a display. */
+    /**
+     * Creates the application window.
+     *
+     * @return the application frame
+     */
     public JFrame buildWindow() {
-
         JFrame frame = new JFrame("Settlers of Catan Remix");
-
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setContentPane(buildScreens());
         frame.setMinimumSize(new Dimension(720, 680));
         frame.setPreferredSize(new Dimension(1000, 860));
         frame.pack();
         frame.setLocationRelativeTo(null);
-
         return frame;
     }
 
-    /** Returns the game view after the screens have been built. */
+    /**
+     * Returns the game view after the screens are built.
+     *
+     * @return the game view
+     */
     public GameView getGameView() {
         return requireBuilt(gameView);
     }
 
-    /** Returns the board view model. */
+    /** What presenters that change the board update so the board view redraws. */
     public BoardViewModel getBoardViewModel() {
         return requireBuilt(boardViewModel);
     }
 
-    /** Returns the controller for initial structure placement. */
+    /** What the board view calls when a vertex or edge is clicked during setup. */
     public PlaceInitialController getPlaceInitialController() {
         return requireBuilt(placeInitialController);
     }
 
-    /** Returns the presenter for the game over screen. */
+    /**
+     * Returns the view model containing Longest Road information.
+     *
+     * @return the Longest Road view model
+     */
+    public LongestRoadViewModel getLongestRoadViewModel() {
+        return requireBuilt(longestRoadViewModel);
+    }
+
+    /**
+     * Returns the game over presenter.
+     *
+     * @return the game over presenter
+     */
     public GameOverPresenter getGameOverPresenter() {
         return requireBuilt(gameOverPresenter);
     }
 
+    /**
+     * Ensures that a component has been initialized.
+     *
+     * @param part the component
+     * @param <T> the component type
+     * @return the initialized component
+     */
     private static <T> T requireBuilt(T part) {
-
         if (part == null) {
             throw new IllegalStateException(
                     "Call buildScreens() first");
         }
-
         return part;
     }
 
+    /**
+     * Creates a single-threaded daemon executor.
+     *
+     * @return the executor service
+     */
     private static ExecutorService daemonExecutor() {
-
         return Executors.newSingleThreadExecutor(task -> {
-
             Thread thread = new Thread(task, "start-game");
             thread.setDaemon(true);
-
             return thread;
         });
-    }
-
-    /**
-     * Stand-in until the real weather service is connected.
-     */
-    private static final class WeatherNotConnected
-            implements WeatherGateway {
-
-        @Override
-        public int fetchWeatherCode(CityLocation city)
-                throws WeatherUnavailableException {
-
-            throw new WeatherUnavailableException(
-                    "The weather service is not connected yet");
-        }
     }
 }

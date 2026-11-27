@@ -10,6 +10,9 @@ import catan.usecase.build.placement.PlacementStrategy;
 import catan.usecase.build.rules.BuildRequest;
 import catan.usecase.build.rules.BuildRule;
 import catan.usecase.build.rules.BuildRules;
+import catan.usecase.longestroad.LongestRoadInputBoundary;
+import catan.usecase.longestroad.LongestRoadInputData;
+import catan.usecase.longestroad.LongestRoadOutputData;
 import catan.usecase.port.GameRepository;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -25,18 +28,24 @@ public class BuildInteractor implements BuildInputBoundary {
     private final BuildOutputBoundary presenter;
     private final PlacementStrategies placements;
     private final BuildRule rules;
+    private final LongestRoadInputBoundary longestRoadInteractor;
 
     /** The normal road, settlement and city rules. */
-    public BuildInteractor(GameRepository repository, BuildOutputBoundary presenter) {
-        this(repository, presenter, PlacementStrategies.standard(), BuildRules.forPlacing());
+    public BuildInteractor(GameRepository repository, BuildOutputBoundary presenter,
+                           LongestRoadInputBoundary longestRoadInteractor) {
+        this(repository, presenter, PlacementStrategies.standard(),
+                BuildRules.forPlacing(), longestRoadInteractor);
     }
 
     public BuildInteractor(GameRepository repository, BuildOutputBoundary presenter,
-                           PlacementStrategies placements, BuildRule rules) {
+                           PlacementStrategies placements, BuildRule rules,
+                           LongestRoadInputBoundary longestRoadInteractor) {
         this.repository = Objects.requireNonNull(repository, "repository");
         this.presenter = Objects.requireNonNull(presenter, "presenter");
         this.placements = Objects.requireNonNull(placements, "placements");
         this.rules = Objects.requireNonNull(rules, "rules");
+        this.longestRoadInteractor = Objects.requireNonNull(
+                longestRoadInteractor, "longestRoadInteractor");
     }
 
     @Override
@@ -57,7 +66,9 @@ public class BuildInteractor implements BuildInputBoundary {
         player.getResources().spendResources(BuildCost.of(inputData.structure()));
         placement.place(game.getBoard(), player, inputData.locationId());
 
-        Player holder = game.updateLongestRoadHolder();
+        LongestRoadOutputData longestRoadOutputData =
+                longestRoadInteractor.execute(new LongestRoadInputData(game));
+
         boolean gameOver = game.checkVictory();
         repository.save(game);
 
@@ -67,7 +78,8 @@ public class BuildInteractor implements BuildInputBoundary {
                 player.getName(),
                 player.getVictoryPoints(),
                 resourcesOf(player),
-                holder == null ? null : holder.getName(),
+                longestRoadOutputData.holderName(),
+                longestRoadOutputData.roadLength(),
                 gameOver,
                 gameOver ? game.getWinner().getName() : null,
                 BoardSnapshot.of(game.getBoard(), game.getPlayers())));

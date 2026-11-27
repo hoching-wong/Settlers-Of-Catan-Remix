@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Random;
+
 import org.junit.jupiter.api.Test;
 
 class BoardTest {
@@ -62,7 +63,7 @@ class BoardTest {
     void twoAndTwelveHaveOneTileAndOthersHaveTwo() {
         assertEquals(1, board.getMatchingTiles(2).size());
         assertEquals(1, board.getMatchingTiles(12).size());
-        for (int total : new int[] {3, 4, 5, 6, 8, 9, 10, 11}) {
+        for (int total : new int[]{3, 4, 5, 6, 8, 9, 10, 11}) {
             assertEquals(2, board.getMatchingTiles(total).size(), "total " + total);
         }
     }

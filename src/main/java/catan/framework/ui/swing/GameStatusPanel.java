@@ -77,6 +77,7 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
   private final RoundedPanel bonusBlock = new RoundedPanel(10, null);
   private final JLabel errorLabel = new JLabel();
   private final JPanel playersPanel = new JPanel();
+  private final JPanel overviewCards = new JPanel(new BorderLayout(0, 8));
 
   /**
    * Creates the game status panel and registers listeners.
@@ -85,7 +86,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
    * @param startMenuViewModel the start menu view model
    */
   public GameStatusPanel(GameStatusViewModel viewModel, StartMenuViewModel startMenuViewModel) {
-
     this.viewModel = Objects.requireNonNull(viewModel);
     this.startMenuViewModel = Objects.requireNonNull(startMenuViewModel);
 
@@ -96,13 +96,15 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     JPanel overviewPanel = new JPanel(new BorderLayout(0, 8));
     overviewPanel.setOpaque(false);
 
+    overviewCards.setOpaque(false);
+    overviewCards.add(createWeatherPanel(), BorderLayout.NORTH);
+
     overviewPanel.add(createTitlePanel(), BorderLayout.NORTH);
-    overviewPanel.add(createWeatherPanel(), BorderLayout.CENTER);
+    overviewPanel.add(overviewCards, BorderLayout.CENTER);
 
     JLabel playersLabel = new JLabel("Players");
 
     styleLabel(playersLabel, new Color(0x5E5547), Font.BOLD, 15f);
-
     playersLabel.setBorder(BorderFactory.createEmptyBorder(2, 2, 0, 0));
 
     overviewPanel.add(playersLabel, BorderLayout.SOUTH);
@@ -110,16 +112,13 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     add(overviewPanel, BorderLayout.NORTH);
 
     playersPanel.setLayout(new BoxLayout(playersPanel, BoxLayout.Y_AXIS));
-
     playersPanel.setBackground(PANEL_COLOR);
 
     JScrollPane scrollPane = new JScrollPane(playersPanel);
 
     scrollPane.setBorder(BorderFactory.createEmptyBorder());
     scrollPane.getViewport().setBackground(PANEL_COLOR);
-
     scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
     scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
     add(scrollPane, BorderLayout.CENTER);
@@ -134,13 +133,33 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     refresh();
   }
 
+  /**
+   * Adds the Longest Road panel between the weather information and player status.
+   *
+   * @param longestRoadPanel the panel displaying Longest Road information
+   */
+  public void setLongestRoadPanel(LongestRoadPanel longestRoadPanel) {
+    Objects.requireNonNull(longestRoadPanel, "longestRoadPanel");
+
+    Component previousPanel =
+        ((BorderLayout) overviewCards.getLayout()).getLayoutComponent(BorderLayout.CENTER);
+
+    if (previousPanel != null) {
+      overviewCards.remove(previousPanel);
+    }
+
+    overviewCards.add(longestRoadPanel, BorderLayout.CENTER);
+
+    overviewCards.revalidate();
+    overviewCards.repaint();
+  }
+
   /** Creates the game overview title. */
   private JPanel createTitlePanel() {
     RoundedPanel panel = new RoundedPanel(12, null);
 
     panel.setLayout(new BorderLayout());
     panel.setBackground(TITLE_COLOR);
-
     panel.setBorder(BorderFactory.createEmptyBorder(9, 6, 9, 6));
 
     JLabel label = new JLabel("Game Overview", SwingConstants.CENTER);
@@ -158,7 +177,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
     panel.setLayout(new BorderLayout(0, 7));
     panel.setBackground(Color.WHITE);
-
     panel.setBorder(BorderFactory.createEmptyBorder(9, 9, 9, 9));
 
     JPanel top = new JPanel(new GridLayout(2, 2, 6, 4));
@@ -169,11 +187,9 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     cityTitle.setIcon(new LocationIcon());
 
     styleLabel(cityTitle, WEATHER_HEADING_COLOR, Font.BOLD, 13f);
-
     cityTitle.setIconTextGap(5);
 
     styleLabel(weatherTitle, WEATHER_HEADING_COLOR, Font.BOLD, 13f);
-
     weatherTitle.setIconTextGap(5);
 
     styleLabel(cityLabel, TEXT_COLOR, Font.PLAIN, 14f);
@@ -203,7 +219,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
     bonusBlock.setBackground(NO_BONUS_COLOR);
     bonusBlock.setLayout(new BorderLayout());
-
     bonusBlock.setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 3));
 
     styleLabel(bonusLabel, TITLE_COLOR, Font.BOLD, 14f);
@@ -258,7 +273,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     int playerIndex = 0;
 
     for (GameStatusViewModel.PlayerStatus player : viewModel.getPlayers()) {
-
       playersPanel.add(createPlayerCard(player, playerIndex));
       playersPanel.add(Box.createVerticalStrut(8));
 
@@ -302,7 +316,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
    * @return the player card
    */
   private JPanel createPlayerCard(GameStatusViewModel.PlayerStatus player, int playerIndex) {
-
     final Color headerColor = PLAYER_HEADER_COLORS[playerIndex];
     final Color accentColor = PLAYER_ACCENT_COLORS[playerIndex];
 
@@ -313,7 +326,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     card.setName("player-card-" + player.playerName());
     card.setBackground(Color.WHITE);
     card.setLayout(new BorderLayout());
-
     card.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
 
     // A thin coloured strip identifies each player.
@@ -326,7 +338,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     JPanel header = new JPanel(new BorderLayout(5, 0));
 
     header.setOpaque(false);
-
     header.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
 
     JLabel nameLabel = new JLabel(player.playerName());
@@ -344,7 +355,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
       turnBlock.setBackground(TITLE_COLOR);
       turnBlock.setLayout(new BorderLayout());
-
       turnBlock.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
 
       JLabel turnLabel = new JLabel("Current Turn");
@@ -358,7 +368,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     JPanel headerSection = new JPanel(new BorderLayout());
 
     headerSection.setOpaque(false);
-
     headerSection.add(colourStrip, BorderLayout.NORTH);
     headerSection.add(header, BorderLayout.CENTER);
 
@@ -367,7 +376,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     JPanel details = new JPanel(new BorderLayout(0, 10));
 
     details.setOpaque(false);
-
     details.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
 
     // Victory Points remains on a white background.
@@ -395,7 +403,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     JPanel pointsSection = new JPanel(new BorderLayout(0, 3));
 
     pointsSection.setOpaque(false);
-
     pointsSection.add(pointsPanel, BorderLayout.NORTH);
     pointsSection.add(createSeparator(), BorderLayout.SOUTH);
 
@@ -417,7 +424,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     card.add(details, BorderLayout.CENTER);
 
     card.setAlignmentX(LEFT_ALIGNMENT);
-
     card.setMaximumSize(new Dimension(Integer.MAX_VALUE, card.getPreferredSize().height));
 
     return card;
@@ -434,11 +440,8 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
     RoundedPanel block = new RoundedPanel(9, null);
 
     block.setName("resource-" + resource);
-
     block.setBackground(RESOURCE_COLORS.get(resource));
-
     block.setLayout(new BorderLayout(2, 0));
-
     block.setBorder(BorderFactory.createEmptyBorder(6, 4, 6, 4));
 
     String displayName = resource.substring(0, 1) + resource.substring(1).toLowerCase(Locale.ROOT);
@@ -466,7 +469,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
   /** Applies consistent font and colour settings to a label. */
   private static void styleLabel(JLabel label, Color colour, int style, float size) {
-
     label.setForeground(colour);
     label.setFont(label.getFont().deriveFont(style, size));
   }
@@ -492,7 +494,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
       drawing.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
       drawing.setColor(getBackground());
-
       drawing.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), arc, arc));
 
       drawing.dispose();
@@ -545,13 +546,11 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
     @Override
     public void paintIcon(Component component, Graphics graphics, int x, int y) {
-
       Graphics2D drawing = (Graphics2D) graphics.create();
 
       drawing.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
       drawing.setColor(colour);
-
       drawing.fillOval(x, y, getIconWidth(), getIconHeight());
 
       drawing.dispose();
@@ -560,7 +559,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
   /** Creates a local, antialiased drawing context for an icon. */
   private static Graphics2D iconGraphics(Graphics graphics, int x, int y, float stroke) {
-
     Graphics2D drawing = (Graphics2D) graphics.create();
 
     drawing.translate(x, y);
@@ -588,7 +586,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
     @Override
     public void paintIcon(Component component, Graphics graphics, int x, int y) {
-
       Graphics2D drawing = iconGraphics(graphics, x, y, 1.6f);
 
       drawing.scale(22.0 / 18.0, 22.0 / 18.0);
@@ -626,11 +623,9 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
     @Override
     public void paintIcon(Component component, Graphics graphics, int x, int y) {
-
       Graphics2D drawing = iconGraphics(graphics, x, y, 1.4f);
 
       drawing.scale(20.0 / 18.0, 20.0 / 18.0);
-
       drawing.setColor(TROPHY_COLOR);
 
       Path2D cup = new Path2D.Double();
@@ -685,7 +680,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
     @Override
     public void paintIcon(Component component, Graphics graphics, int x, int y) {
-
       Graphics2D drawing = iconGraphics(graphics, x, y, 2f);
 
       double scale = (double) ICON_SIZE / DRAWING_SIZE;
@@ -760,11 +754,9 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
         double angle = index * Math.PI / 4;
 
         int startX = (int) Math.round(16 + 10 * Math.cos(angle));
-
         int startY = (int) Math.round(16 + 10 * Math.sin(angle));
 
         int endX = (int) Math.round(16 + 14 * Math.cos(angle));
-
         int endY = (int) Math.round(16 + 14 * Math.sin(angle));
 
         drawing.drawLine(startX, startY, endX, endY);
@@ -827,7 +819,6 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
 
     @Override
     public void paintIcon(Component component, Graphics graphics, int x, int y) {
-
       Graphics2D drawing = iconGraphics(graphics, x, y, 1.3f);
 
       drawing.setColor(RESOURCE_ICON_COLORS.getOrDefault(resource, TEXT_COLOR));
@@ -889,6 +880,7 @@ public class GameStatusPanel extends JPanel implements PropertyChangeListener {
       Path2D wool = new Path2D.Double();
 
       wool.moveTo(4, 13);
+
       wool.curveTo(0, 13, 0, 7, 4, 7);
       wool.curveTo(3, 2, 9, 1, 10, 5);
       wool.curveTo(15, 3, 17, 10, 13, 12);

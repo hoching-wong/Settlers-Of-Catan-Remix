@@ -2,7 +2,6 @@ package catan.usecase.startgame;
 
 import catan.entity.Board;
 import catan.entity.BoardFactory;
-import catan.entity.CityLocation;
 import catan.entity.Dice;
 import catan.entity.Game;
 import catan.entity.GamePhase;
@@ -10,8 +9,9 @@ import catan.entity.Player;
 import catan.entity.WeatherData;
 import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
-import catan.usecase.port.WeatherGateway;
-import catan.usecase.port.WeatherUnavailableException;
+import catan.usecase.weather.WeatherInputBoundary;
+import catan.usecase.weather.WeatherInputData;
+import catan.usecase.weather.WeatherOutputData;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -20,9 +20,13 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 
+/**
+ * Handles starting a new game, including retrieving weather data.
+ */
 public class StartGameInteractor implements StartGameInputBoundary {
+
     private final GameRepository gameRepository;
-    private final WeatherGateway weatherGateway;
+    private final WeatherInputBoundary weatherInteractor;
     private final StartGameOutputBoundary outputBoundary;
     private final Random random;
     private final BoardRepository boardRepository;
@@ -32,9 +36,13 @@ public class StartGameInteractor implements StartGameInputBoundary {
      *
      * @param random used for the board layout and the dice; pass a seeded one in tests
      */
-    public StartGameInteractor(GameRepository gameRepository, WeatherGateway weatherGateway,
-                               StartGameOutputBoundary outputBoundary, Random random) {
-        this(gameRepository, weatherGateway, outputBoundary, random, new NoGeneratedBoard());
+    public StartGameInteractor(
+            GameRepository gameRepository,
+            WeatherInputBoundary weatherInteractor,
+            StartGameOutputBoundary outputBoundary,
+            Random random) {
+        this(gameRepository, weatherInteractor, outputBoundary,
+                random, new NoGeneratedBoard());
     }
 
     /**
@@ -44,22 +52,37 @@ public class StartGameInteractor implements StartGameInputBoundary {
      *
      * @param random used for the dice, and for the board when none was generated
      */
-    public StartGameInteractor(GameRepository gameRepository, WeatherGateway weatherGateway,
-                               StartGameOutputBoundary outputBoundary, Random random,
-                               BoardRepository boardRepository) {
-        this.gameRepository = Objects.requireNonNull(gameRepository, "gameRepository");
-        this.weatherGateway = Objects.requireNonNull(weatherGateway, "weatherGateway");
-        this.outputBoundary = Objects.requireNonNull(outputBoundary, "outputBoundary");
-        this.random = Objects.requireNonNull(random, "random");
-        this.boardRepository = Objects.requireNonNull(boardRepository, "boardRepository");
+    public StartGameInteractor(
+            GameRepository gameRepository,
+            WeatherInputBoundary weatherInteractor,
+            StartGameOutputBoundary outputBoundary,
+            Random random,
+            BoardRepository boardRepository) {
+
+        this.gameRepository = Objects.requireNonNull(
+                gameRepository, "gameRepository");
+        this.weatherInteractor = Objects.requireNonNull(
+                weatherInteractor, "weatherInteractor");
+        this.outputBoundary = Objects.requireNonNull(
+                outputBoundary, "outputBoundary");
+        this.random = Objects.requireNonNull(
+                random, "random");
+        this.boardRepository = Objects.requireNonNull(
+                boardRepository, "boardRepository");
     }
 
+    /**
+     * Validates the input and starts a new game.
+     *
+     * @param inputData the information required to start a game
+     */
     @Override
     public void startGame(StartGameInputData inputData) {
         Objects.requireNonNull(inputData, "inputData");
 
-        // Never throw away a game that is still being played. A finished game may be replaced.
+        // Never replace a game that is still being played.
         Game current = gameRepository.get();
+
         if (current != null && current.getPhase() != GamePhase.GAME_OVER) {
             outputBoundary.presentError("A game is already in progress.");
             return;
@@ -67,42 +90,40 @@ public class StartGameInteractor implements StartGameInputBoundary {
 
         List<String> names = new ArrayList<>();
         String nameError = validateNames(inputData.playerNames(), names);
+
         if (nameError != null) {
             outputBoundary.presentError(nameError);
             return;
         }
-        CityLocation city = findCity(inputData.cityName());
-        if (inputData.cityName() == null || inputData.cityName().isBlank()) {
-            outputBoundary.presentError("Please select a city.");
-            return;
-        }
-        if (city == null) {
-            outputBoundary.presentError("Unknown city: " + inputData.cityName().trim() + ".");
+
+        WeatherOutputData weatherOutputData;
+
+        try {
+            weatherOutputData = weatherInteractor.execute(
+                    new WeatherInputData(inputData.cityName()));
+        } catch (IllegalArgumentException exception) {
+            outputBoundary.presentError(exception.getMessage());
             return;
         }
 
-        boolean weatherAvailable = true;
-        WeatherData weather;
-        try {
-            weather = WeatherData.fromWmoCode(weatherGateway.fetchWeatherCode(city));
-        } catch (WeatherUnavailableException e) {
-            weatherAvailable = false;
-            weather = WeatherData.none();
-        }
+        WeatherData weather = weatherOutputData.getWeather();
 
         List<Player> players = new ArrayList<>();
+
         for (String name : names) {
             players.add(new Player(name));
         }
+
         Board board = takeBoard();
         Game game = new Game(board, players, weather, new Dice(random));
+
         game.startGame();
         gameRepository.save(game);
 
         outputBoundary.presentGameStarted(new StartGameOutputData(
                 List.copyOf(names),
-                city.getName(),
-                weatherAvailable,
+                weatherOutputData.getCity().getName(),
+                weatherOutputData.isWeatherAvailable(),
                 weather.getCondition(),
                 weather.getBonusResource(),
                 weather.getMultiplier()));
@@ -134,37 +155,46 @@ public class StartGameInteractor implements StartGameInputBoundary {
         }
     }
 
-    /** Fills {@code cleanNames} with the trimmed names. Returns an error message, or null if all is well. */
-    private static String validateNames(List<String> names, List<String> cleanNames) {
-        if (names.size() < Game.MIN_PLAYERS || names.size() > Game.MAX_PLAYERS) {
-            return "Please choose " + Game.MIN_PLAYERS + " to " + Game.MAX_PLAYERS + " players.";
+    /**
+     * Validates player names and stores the trimmed names.
+     *
+     * @param names the original player names
+     * @param cleanNames the list used to store validated names
+     * @return an error message, or null if the names are valid
+     */
+    private static String validateNames(
+            List<String> names, List<String> cleanNames) {
+
+        if (names.size() < Game.MIN_PLAYERS
+                || names.size() > Game.MAX_PLAYERS) {
+
+            return "Please choose "
+                    + Game.MIN_PLAYERS
+                    + " to "
+                    + Game.MAX_PLAYERS
+                    + " players.";
         }
+
         for (int i = 0; i < names.size(); i++) {
             String name = names.get(i);
+
             if (name == null || name.isBlank()) {
                 return "Player " + (i + 1) + " needs a name.";
             }
+
             cleanNames.add(name.trim());
         }
+
         Set<String> seen = new HashSet<>();
+
         for (String name : cleanNames) {
             if (!seen.add(name.toLowerCase(Locale.ROOT))) {
-                return "Player names must be different: \"" + name + "\" is used twice.";
+                return "Player names must be different: \""
+                        + name
+                        + "\" is used twice.";
             }
         }
-        return null;
-    }
 
-    private static CityLocation findCity(String cityName) {
-        if (cityName == null) {
-            return null;
-        }
-        String wanted = cityName.trim();
-        for (CityLocation city : CityLocation.defaults()) {
-            if (city.getName().equalsIgnoreCase(wanted)) {
-                return city;
-            }
-        }
         return null;
     }
 }

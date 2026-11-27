@@ -4,21 +4,37 @@ import catan.interfaceadapter.viewmodel.BoardState;
 import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.usecase.build.BuildOutputBoundary;
 import catan.usecase.build.BuildOutputData;
+import catan.usecase.longestroad.LongestRoadOutputBoundary;
+import catan.usecase.longestroad.LongestRoadOutputData;
 import java.util.Locale;
 import java.util.Objects;
 
 /** Redraws the board after a build, or shows why the build was rejected. */
 public class BuildPresenter implements BuildOutputBoundary {
     private final BoardViewModel viewModel;
+    private final LongestRoadOutputBoundary longestRoadPresenter;
     private final Runnable refreshGameStatus;
 
     public BuildPresenter(BoardViewModel viewModel) {
-        this(viewModel, () -> {});
+        this(viewModel, outputData -> {}, () -> {});
     }
 
     public BuildPresenter(BoardViewModel viewModel,
                           Runnable refreshGameStatus) {
+        this(viewModel, outputData -> {}, refreshGameStatus);
+    }
+
+    public BuildPresenter(BoardViewModel viewModel,
+                          LongestRoadOutputBoundary longestRoadPresenter) {
+        this(viewModel, longestRoadPresenter, () -> {});
+    }
+
+    public BuildPresenter(BoardViewModel viewModel,
+                          LongestRoadOutputBoundary longestRoadPresenter,
+                          Runnable refreshGameStatus) {
         this.viewModel = viewModel;
+        this.longestRoadPresenter =
+                Objects.requireNonNull(longestRoadPresenter, "longestRoadPresenter");
         this.refreshGameStatus =
                 Objects.requireNonNull(refreshGameStatus, "refreshGameStatus");
     }
@@ -39,6 +55,11 @@ public class BuildPresenter implements BuildOutputBoundary {
             message.append(" ").append(outputData.winnerName()).append(" wins the game!");
         }
         state.setMessage(message.toString(), false);
+
+        longestRoadPresenter.present(new LongestRoadOutputData(
+                outputData.longestRoadHolder(),
+                outputData.longestRoadLength()));
+
         viewModel.firePropertyChanged();
         refreshGameStatus.run();
     }

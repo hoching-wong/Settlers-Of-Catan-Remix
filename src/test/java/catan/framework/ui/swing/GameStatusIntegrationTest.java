@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import catan.usecase.longestroad.LongestRoadInteractor;
 import catan.entity.BoardFactory;
 import catan.entity.Dice;
 import catan.entity.Game;
@@ -192,7 +193,10 @@ class GameStatusIntegrationTest {
                     boardViewModel, this::refreshGameStatus);
 
     BuildInteractor interactor =
-            new BuildInteractor(repository, presenter);
+            new BuildInteractor(
+                    repository,
+                    presenter,
+                    new LongestRoadInteractor());
 
     int edgeId =
             PlacementStrategies.standard()
@@ -246,7 +250,10 @@ class GameStatusIntegrationTest {
                     boardViewModel, this::refreshGameStatus);
 
     BuildInteractor interactor =
-            new BuildInteractor(repository, presenter);
+            new BuildInteractor(
+                    repository,
+                    presenter,
+                    new LongestRoadInteractor());
 
     interactor.execute(
             new BuildInputData(StructureType.ROAD, -1));
