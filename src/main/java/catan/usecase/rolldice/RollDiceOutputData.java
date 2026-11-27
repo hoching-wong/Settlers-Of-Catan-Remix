@@ -1,5 +1,6 @@
 package catan.usecase.rolldice;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -11,13 +12,15 @@ import java.util.Map;
  * @param dieTwo     the second die
  * @param total      the two dice added together
  * @param gains      what each player received, by player name and then resource name. Players who
- *                   received nothing are left out.
+ *                   received nothing are left out. The order of the given map is kept.
  */
 public record RollDiceOutputData(String playerName, int dieOne, int dieTwo, int total,
                                  Map<String, Map<String, Integer>> gains) {
     public RollDiceOutputData {
+        // Keeps the order of the given map, so the presenter lists players and resources the same way every time.
         Map<String, Map<String, Integer>> copy = new LinkedHashMap<>();
-        gains.forEach((name, resources) -> copy.put(name, Map.copyOf(resources)));
-        gains = Map.copyOf(copy);
+        gains.forEach((name, resources) ->
+                copy.put(name, Collections.unmodifiableMap(new LinkedHashMap<>(resources))));
+        gains = Collections.unmodifiableMap(copy);
     }
 }
