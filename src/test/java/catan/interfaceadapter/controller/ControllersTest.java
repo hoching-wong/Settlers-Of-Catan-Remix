@@ -8,6 +8,8 @@ import catan.usecase.placeinitial.PlaceInitialInputBoundary;
 import catan.usecase.placeinitial.PlaceInitialInputData;
 import catan.usecase.restartgame.RestartGameInputBoundary;
 import catan.usecase.restartgame.RestartGameInputData;
+import catan.usecase.rolldice.RollDiceInputBoundary;
+import catan.usecase.rolldice.RollDiceInputData;
 import catan.usecase.startgame.StartGameInputBoundary;
 import catan.usecase.startgame.StartGameInputData;
 import java.util.ArrayList;
@@ -59,6 +61,19 @@ class ControllersTest {
     }
 
     @Test
+    void rollDiceControllerCallsTheUseCaseEachTimeItIsPressed() {
+        List<RollDiceInputData> received = new ArrayList<>();
+        RollDiceInputBoundary boundary = received::add;
+
+        RollDiceController controller = new RollDiceController(boundary);
+        controller.rollDice();
+        assertEquals(1, received.size());
+
+        controller.rollDice();
+        assertEquals(List.of(new RollDiceInputData(), new RollDiceInputData()), received);
+    }
+
+    @Test
     void restartControllerCallsTheUseCase() {
         List<RestartGameInputData> received = new ArrayList<>();
         RestartGameInputBoundary boundary = received::add;
@@ -73,6 +88,7 @@ class ControllersTest {
         assertThrows(NullPointerException.class, () -> new StartGameController(null));
         assertThrows(NullPointerException.class, () -> new PlaceInitialController(null));
         assertThrows(NullPointerException.class, () -> new EndTurnController(null));
+        assertThrows(NullPointerException.class, () -> new RollDiceController(null));
         assertThrows(NullPointerException.class, () -> new RestartGameController(null));
     }
 }
