@@ -15,6 +15,7 @@ import catan.interfaceadapter.controller.EndTurnController;
 import catan.interfaceadapter.controller.GenerateBoardController;
 import catan.interfaceadapter.controller.PlaceInitialController;
 import catan.interfaceadapter.controller.RestartGameController;
+import catan.interfaceadapter.controller.RollDiceController;
 import catan.interfaceadapter.controller.SelectStructureController;
 import catan.interfaceadapter.controller.StartGameController;
 import catan.interfaceadapter.presenter.BuildPresenter;
@@ -23,6 +24,7 @@ import catan.interfaceadapter.presenter.GameOverPresenter;
 import catan.interfaceadapter.presenter.GenerateBoardPresenter;
 import catan.interfaceadapter.presenter.PlaceInitialPresenter;
 import catan.interfaceadapter.presenter.RestartGamePresenter;
+import catan.interfaceadapter.presenter.RollDicePresenter;
 import catan.interfaceadapter.presenter.SelectStructurePresenter;
 import catan.interfaceadapter.presenter.StartGamePresenter;
 import catan.interfaceadapter.viewmodel.BoardViewModel;
@@ -39,6 +41,7 @@ import catan.usecase.port.GameRepository;
 import catan.usecase.port.WeatherGateway;
 import catan.usecase.port.WeatherUnavailableException;
 import catan.usecase.restartgame.RestartGameInteractor;
+import catan.usecase.rolldice.RollDiceInteractor;
 import catan.usecase.selectstructure.SelectStructureInteractor;
 import catan.usecase.startgame.StartGameInteractor;
 import java.awt.Dimension;
@@ -102,6 +105,9 @@ public class AppBuilder {
                 new SelectStructureInteractor(gameRepository, new SelectStructurePresenter(boardViewModel)));
         BuildController build = new BuildController(
                 new BuildInteractor(gameRepository, new BuildPresenter(boardViewModel)));
+        // UC2: the Roll Dice button rolls for the current player and hands out the resources.
+        RollDiceController rollDice = new RollDiceController(
+                new RollDiceInteractor(gameRepository, new RollDicePresenter(game)));
         EndTurnController endTurn = new EndTurnController(
                 new EndTurnInteractor(gameRepository, new EndTurnPresenter(game)));
         RestartGameController restartGame = new RestartGameController(new RestartGameInteractor(
@@ -118,6 +124,7 @@ public class AppBuilder {
                 new InitialPlacementClickListener(boardViewModel, placeInitialController));
 
         gameView = new GameView(game, endTurn);
+        gameView.setRollDiceController(rollDice);
         gameView.setBoardComponent(boardView);
         GameOverView gameOverView = new GameOverView(gameOver, restartGame);
         return new ScreenSwitcher(viewManager, startMenuView, gameView, gameOverView);
