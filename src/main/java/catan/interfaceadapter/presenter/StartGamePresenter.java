@@ -16,6 +16,7 @@ public class StartGamePresenter implements StartGameOutputBoundary {
     private final ViewManagerModel viewManager;
     private final BoardViewModel board;
     private final LongestRoadViewModel longestRoadViewModel;
+    private final Runnable refreshGameStatus;
 
     /** For a screen without a board view. */
     public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager) {
@@ -25,24 +26,40 @@ public class StartGamePresenter implements StartGameOutputBoundary {
     /** @param board told that the first click on the board places Player 1's first settlement */
     public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager,
                               BoardViewModel board) {
-        this(startMenu, game, viewManager, board, new LongestRoadViewModel());
+        this(startMenu, game, viewManager, board, new LongestRoadViewModel(), () -> {});
     }
 
     public StartGamePresenter(StartMenuViewModel startMenu,
                               GameViewModel game,
                               ViewManagerModel viewManager,
                               LongestRoadViewModel longestRoadViewModel) {
-        this(startMenu, game, viewManager, new BoardViewModel(), longestRoadViewModel);
+        this(startMenu, game, viewManager, new BoardViewModel(), longestRoadViewModel, () -> {});
     }
 
     public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager,
                               BoardViewModel board, LongestRoadViewModel longestRoadViewModel) {
+        this(startMenu, game, viewManager, board, longestRoadViewModel, () -> {});
+    }
+
+    public StartGamePresenter(StartMenuViewModel startMenu, GameViewModel game, ViewManagerModel viewManager,
+                              BoardViewModel board, Runnable refreshGameStatus) {
+        this(startMenu, game, viewManager, board, new LongestRoadViewModel(), refreshGameStatus);
+    }
+
+    public StartGamePresenter(StartMenuViewModel startMenu,
+                              GameViewModel game,
+                              ViewManagerModel viewManager,
+                              BoardViewModel board,
+                              LongestRoadViewModel longestRoadViewModel,
+                              Runnable refreshGameStatus) {
         this.startMenu = Objects.requireNonNull(startMenu, "startMenu");
         this.game = Objects.requireNonNull(game, "game");
         this.viewManager = Objects.requireNonNull(viewManager, "viewManager");
         this.board = Objects.requireNonNull(board, "board");
         this.longestRoadViewModel = Objects.requireNonNull(
                 longestRoadViewModel, "longestRoadViewModel");
+        this.refreshGameStatus = Objects.requireNonNull(
+                refreshGameStatus, "refreshGameStatus");
     }
 
     @Override
@@ -57,6 +74,7 @@ public class StartGamePresenter implements StartGameOutputBoundary {
         board.firePropertyChanged();
 
         longestRoadViewModel.updateState(null, 0);
+        refreshGameStatus.run();
 
         viewManager.setActiveScreen(ViewManagerModel.Screen.GAME);
     }

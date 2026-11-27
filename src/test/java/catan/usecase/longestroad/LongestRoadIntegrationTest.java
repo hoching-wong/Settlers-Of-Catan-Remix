@@ -2,6 +2,7 @@ package catan.usecase.longestroad;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,6 +19,7 @@ import catan.framework.ui.swing.LongestRoadPanel;
 import catan.interfaceadapter.presenter.LongestRoadPresenter;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import java.awt.Component;
+import java.awt.Container;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -49,9 +51,7 @@ class LongestRoadIntegrationTest {
   private final LongestRoadInteractor interactor =
           new LongestRoadInteractor();
 
-  /**
-   * Recalculates the Longest Road and presents the result.
-   */
+  /** Recalculates the Longest Road and presents the result. */
   private void updateLongestRoad() {
     LongestRoadOutputData outputData =
             interactor.execute(new LongestRoadInputData(game));
@@ -131,23 +131,61 @@ class LongestRoadIntegrationTest {
   }
 
   /**
-   * Checks whether the panel contains an exact label.
+   * Finds a named component recursively within the panel.
    *
-   * @param panel the panel to inspect
-   * @param text the expected label
-   * @return true if the label exists
+   * @param component the component to inspect
+   * @param name the expected component name
+   * @return the matching component, or null if not found
    */
-  private boolean containsLabel(
-          LongestRoadPanel panel, String text) {
+  private Component findNamedComponent(Component component, String name) {
+    if (name.equals(component.getName())) {
+      return component;
+    }
 
-    for (Component component : panel.getComponents()) {
-      if (component instanceof JLabel label
-              && text.equals(label.getText())) {
-        return true;
+    if (component instanceof Container container) {
+      for (Component child : container.getComponents()) {
+        Component found = findNamedComponent(child, name);
+
+        if (found != null) {
+          return found;
+        }
       }
     }
 
-    return false;
+    return null;
+  }
+
+  /**
+   * Checks the displayed text of a named label.
+   *
+   * @param panel the panel to inspect
+   * @param name the expected component name
+   * @param expected the expected label text
+   */
+  private void assertLabelValue(
+          LongestRoadPanel panel, String name, String expected) {
+
+    Component component = findNamedComponent(panel, name);
+
+    assertNotNull(component);
+    assertTrue(component instanceof JLabel);
+    assertEquals(expected, ((JLabel) component).getText());
+  }
+
+  /**
+   * Checks the displayed Longest Road information.
+   *
+   * @param panel the panel to inspect
+   * @param holder the expected holder
+   * @param length the expected road length
+   * @param bonus the expected victory point bonus
+   */
+  private void assertLongestRoadStatus(
+          LongestRoadPanel panel, String holder, String length, String bonus) {
+
+    assertLabelValue(panel, "longest-road-holder", holder);
+    assertLabelValue(panel, "longest-road-length", length);
+    assertLabelValue(panel, "longest-road-bonus", bonus);
   }
 
   @Test
@@ -161,11 +199,7 @@ class LongestRoadIntegrationTest {
     assertNull(viewModel.getHolderName());
     assertEquals(0, viewModel.getRoadLength());
 
-    assertTrue(containsLabel(
-            panel, "Current Holder: None"));
-
-    assertTrue(containsLabel(
-            panel, "Victory Point Bonus: 0 VP"));
+    assertLongestRoadStatus(panel, "None", "-", "0 VP");
   }
 
   @Test
@@ -184,14 +218,7 @@ class LongestRoadIntegrationTest {
     assertEquals("Alice", viewModel.getHolderName());
     assertEquals(5, viewModel.getRoadLength());
 
-    assertTrue(containsLabel(
-            panel, "Current Holder: Alice"));
-
-    assertTrue(containsLabel(
-            panel, "Longest Road Length: 5"));
-
-    assertTrue(containsLabel(
-            panel, "Victory Point Bonus: +2 VP"));
+    assertLongestRoadStatus(panel, "Alice", "5", "+2 VP");
   }
 
   @Test
@@ -223,13 +250,6 @@ class LongestRoadIntegrationTest {
     assertEquals("Bob", viewModel.getHolderName());
     assertEquals(6, viewModel.getRoadLength());
 
-    assertTrue(containsLabel(
-            panel, "Current Holder: Bob"));
-
-    assertTrue(containsLabel(
-            panel, "Longest Road Length: 6"));
-
-    assertTrue(containsLabel(
-            panel, "Victory Point Bonus: +2 VP"));
+    assertLongestRoadStatus(panel, "Bob", "6", "+2 VP");
   }
 }

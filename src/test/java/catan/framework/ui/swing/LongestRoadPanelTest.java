@@ -1,12 +1,15 @@
 package catan.framework.ui.swing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import catan.interfaceadapter.presenter.LongestRoadPresenter;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.usecase.longestroad.LongestRoadOutputData;
 import java.awt.Component;
+import java.awt.Container;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.Test;
@@ -15,25 +18,65 @@ import org.junit.jupiter.api.Test;
 class LongestRoadPanelTest {
 
   /**
-   * Checks whether the panel contains a label with the expected text.
+   * Finds a named component recursively within the panel.
    *
-   * @param panel the panel to inspect
-   * @param text the expected label text
-   * @return true if the label exists
+   * @param component the component to inspect
+   * @param name the expected component name
+   * @return the matching component, or null if not found
    */
-  private boolean containsLabel(LongestRoadPanel panel, String text) {
-    for (Component component : panel.getComponents()) {
-      if (component instanceof JLabel label && text.equals(label.getText())) {
-        return true;
+  private Component findNamedComponent(Component component, String name) {
+    if (name.equals(component.getName())) {
+      return component;
+    }
+
+    if (component instanceof Container container) {
+      for (Component child : container.getComponents()) {
+        Component found = findNamedComponent(child, name);
+
+        if (found != null) {
+          return found;
+        }
       }
     }
-    return false;
+
+    return null;
+  }
+
+  /**
+   * Checks the text of a named label.
+   *
+   * @param panel the panel to inspect
+   * @param name the expected component name
+   * @param expected the expected label text
+   */
+  private void assertLabelValue(
+          LongestRoadPanel panel, String name, String expected) {
+    Component component = findNamedComponent(panel, name);
+
+    assertNotNull(component);
+    assertTrue(component instanceof JLabel);
+    assertEquals(expected, ((JLabel) component).getText());
+  }
+
+  /**
+   * Checks all displayed Longest Road information.
+   *
+   * @param panel the panel to inspect
+   * @param holder the expected holder
+   * @param length the expected road length
+   * @param bonus the expected victory point bonus
+   */
+  private void assertLongestRoadStatus(
+          LongestRoadPanel panel, String holder, String length, String bonus) {
+    assertLabelValue(panel, "longest-road-holder", holder);
+    assertLabelValue(panel, "longest-road-length", length);
+    assertLabelValue(panel, "longest-road-bonus", bonus);
   }
 
   /**
    * Waits for pending Swing GUI updates to complete.
    *
-   * @throws Exception if the event dispatch thread is interrupted
+   * @throws Exception if the event dispatch thread operation fails
    */
   private void flushSwingEvents() throws Exception {
     SwingUtilities.invokeAndWait(() -> {
@@ -46,9 +89,7 @@ class LongestRoadPanelTest {
     LongestRoadPanel panel =
             new LongestRoadPanel(new LongestRoadViewModel());
 
-    assertTrue(containsLabel(panel, "Current Holder: None"));
-    assertTrue(containsLabel(panel, "Longest Road Length: -"));
-    assertTrue(containsLabel(panel, "Victory Point Bonus: 0 VP"));
+    assertLongestRoadStatus(panel, "None", "-", "0 VP");
   }
 
   @Test
@@ -59,15 +100,13 @@ class LongestRoadPanelTest {
     viewModel.updateState("Alice", 6);
     flushSwingEvents();
 
-    assertTrue(containsLabel(panel, "Current Holder: Alice"));
-    assertTrue(containsLabel(panel, "Longest Road Length: 6"));
-    assertTrue(containsLabel(panel, "Victory Point Bonus: +2 VP"));
+    assertLongestRoadStatus(panel, "Alice", "6", "+2 VP");
   }
 
   @Test
   void updateWithNullHolderShowsNoHolder() throws Exception {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
-    LongestRoadPanel panel = new LongestRoadPanel(viewModel);
+    final LongestRoadPanel panel = new LongestRoadPanel(viewModel);
 
     viewModel.updateState("Alice", 6);
     flushSwingEvents();
@@ -75,15 +114,13 @@ class LongestRoadPanelTest {
     viewModel.updateState(null, 0);
     flushSwingEvents();
 
-    assertTrue(containsLabel(panel, "Current Holder: None"));
-    assertTrue(containsLabel(panel, "Longest Road Length: -"));
-    assertTrue(containsLabel(panel, "Victory Point Bonus: 0 VP"));
+    assertLongestRoadStatus(panel, "None", "-", "0 VP");
   }
 
   @Test
   void updateReplacesPreviousHolder() throws Exception {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
-    LongestRoadPanel panel = new LongestRoadPanel(viewModel);
+    final LongestRoadPanel panel = new LongestRoadPanel(viewModel);
 
     viewModel.updateState("Alice", 5);
     flushSwingEvents();
@@ -91,50 +128,53 @@ class LongestRoadPanelTest {
     viewModel.updateState("Bob", 7);
     flushSwingEvents();
 
-    assertTrue(containsLabel(panel, "Current Holder: Bob"));
-    assertTrue(containsLabel(panel, "Longest Road Length: 7"));
-    assertTrue(containsLabel(panel, "Victory Point Bonus: +2 VP"));
+    assertLongestRoadStatus(panel, "Bob", "7", "+2 VP");
   }
 
   @Test
-  void panelContainsFourLabels() {
+  void panelContainsRequiredLabels() {
     LongestRoadPanel panel =
             new LongestRoadPanel(new LongestRoadViewModel());
 
-    assertEquals(4, panel.getComponentCount());
+    assertTrue(
+            findNamedComponent(panel, "longest-road-holder") instanceof JLabel);
+
+    assertTrue(
+            findNamedComponent(panel, "longest-road-length") instanceof JLabel);
+
+    assertTrue(
+            findNamedComponent(panel, "longest-road-bonus") instanceof JLabel);
   }
 
   @Test
   void panelDisplaysExistingViewModelState() {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
+
     viewModel.updateState("Alice", 6);
 
     LongestRoadPanel panel = new LongestRoadPanel(viewModel);
 
-    assertTrue(containsLabel(panel, "Current Holder: Alice"));
-    assertTrue(containsLabel(panel, "Longest Road Length: 6"));
-    assertTrue(containsLabel(panel, "Victory Point Bonus: +2 VP"));
+    assertLongestRoadStatus(panel, "Alice", "6", "+2 VP");
   }
 
   @Test
   void presenterUpdatesPanelThroughViewModel() throws Exception {
     LongestRoadViewModel viewModel = new LongestRoadViewModel();
 
-    LongestRoadPresenter presenter = new LongestRoadPresenter(viewModel);
+    LongestRoadPresenter presenter =
+            new LongestRoadPresenter(viewModel);
 
     LongestRoadPanel panel = new LongestRoadPanel(viewModel);
 
     presenter.present(new LongestRoadOutputData("Bob", 7));
     flushSwingEvents();
 
-    assertTrue(containsLabel(panel, "Current Holder: Bob"));
-    assertTrue(containsLabel(panel, "Longest Road Length: 7"));
-    assertTrue(containsLabel(panel, "Victory Point Bonus: +2 VP"));
+    assertLongestRoadStatus(panel, "Bob", "7", "+2 VP");
   }
 
   @Test
   void panelRejectsNullViewModel() {
-    org.junit.jupiter.api.Assertions.assertThrows(
+    assertThrows(
             NullPointerException.class,
             () -> new LongestRoadPanel(null));
   }

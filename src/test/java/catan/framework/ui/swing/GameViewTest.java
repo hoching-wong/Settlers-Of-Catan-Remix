@@ -5,8 +5,10 @@ import static catan.framework.ui.swing.SwingTestSupport.flush;
 import static org.junit.jupiter.api.Assertions.*;
 
 import catan.interfaceadapter.controller.EndTurnController;
+import catan.interfaceadapter.viewmodel.GameStatusViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
+import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.usecase.endturn.EndTurnInputData;
 import java.awt.BorderLayout;
 import java.util.ArrayList;
@@ -198,6 +200,87 @@ class GameViewTest {
 
             assertNull(firstStatusPanel.getParent());
             assertEquals(2, sidePanel.getComponentCount());
+        });
+    }
+
+    @Test
+    void longestRoadIsEmbeddedInsideGameStatus() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            LongestRoadViewModel longestRoadViewModel =
+                    new LongestRoadViewModel();
+
+            GameView gameView = new GameView(
+                    viewModel,
+                    new EndTurnController(endTurnClicks::add),
+                    longestRoadViewModel);
+
+            LongestRoadPanel originalPanel =
+                    find(gameView, "longest-road-panel", LongestRoadPanel.class);
+
+            assertNotNull(originalPanel);
+
+            GameStatusPanel statusPanel = new GameStatusPanel(
+                    new GameStatusViewModel(),
+                    new StartMenuViewModel(List.of("Toronto")));
+
+            gameView.setGameStatusPanel(statusPanel);
+
+            BorderLayout layout = (BorderLayout) gameView.getLayout();
+
+            JPanel sidePanel = assertInstanceOf(
+                    JPanel.class,
+                    layout.getLayoutComponent(BorderLayout.EAST));
+
+            BorderLayout sideLayout = (BorderLayout) sidePanel.getLayout();
+
+            assertSame(statusPanel,
+                    sideLayout.getLayoutComponent(BorderLayout.CENTER));
+
+            assertNull(sideLayout.getLayoutComponent(BorderLayout.NORTH));
+            assertEquals(1, sidePanel.getComponentCount());
+
+            LongestRoadPanel embeddedPanel =
+                    find(statusPanel, "longest-road-panel", LongestRoadPanel.class);
+
+            assertNotNull(embeddedPanel);
+            assertSame(originalPanel, embeddedPanel);
+            assertTrue(SwingUtilities.isDescendingFrom(embeddedPanel, statusPanel));
+
+            JPanel overviewCards = assertInstanceOf(
+                    JPanel.class, embeddedPanel.getParent());
+
+            BorderLayout cardsLayout = assertInstanceOf(
+                    BorderLayout.class, overviewCards.getLayout());
+
+            assertNotNull(cardsLayout.getLayoutComponent(BorderLayout.NORTH));
+            assertSame(embeddedPanel,
+                    cardsLayout.getLayoutComponent(BorderLayout.CENTER));
+
+            JPanel overviewPanel = assertInstanceOf(
+                    JPanel.class, overviewCards.getParent());
+
+            BorderLayout overviewLayout = assertInstanceOf(
+                    BorderLayout.class, overviewPanel.getLayout());
+
+            assertSame(overviewCards,
+                    overviewLayout.getLayoutComponent(BorderLayout.CENTER));
+
+            JLabel playersLabel = assertInstanceOf(
+                    JLabel.class,
+                    overviewLayout.getLayoutComponent(BorderLayout.SOUTH));
+
+            assertEquals("Players", playersLabel.getText());
+
+            longestRoadViewModel.updateState("Alice", 6);
+
+            assertEquals("Alice",
+                    find(embeddedPanel, "longest-road-holder", JLabel.class).getText());
+
+            assertEquals("6",
+                    find(embeddedPanel, "longest-road-length", JLabel.class).getText());
+
+            assertEquals("+2 VP",
+                    find(embeddedPanel, "longest-road-bonus", JLabel.class).getText());
         });
     }
 }
