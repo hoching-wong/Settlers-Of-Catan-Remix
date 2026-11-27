@@ -10,6 +10,7 @@ import catan.framework.ui.swing.GameView;
 import catan.framework.ui.swing.InitialPlacementClickListener;
 import catan.framework.ui.swing.ScreenSwitcher;
 import catan.framework.ui.swing.StartMenuView;
+import catan.framework.weather.OpenMeteoWeatherDataAccessObject;
 import catan.interfaceadapter.controller.BuildController;
 import catan.interfaceadapter.controller.EndTurnController;
 import catan.interfaceadapter.controller.GenerateBoardController;
@@ -40,11 +41,12 @@ import catan.usecase.longestroad.LongestRoadInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
-import catan.usecase.port.WeatherGateway;
-import catan.usecase.port.WeatherUnavailableException;
 import catan.usecase.restartgame.RestartGameInteractor;
 import catan.usecase.selectstructure.SelectStructureInteractor;
 import catan.usecase.startgame.StartGameInteractor;
+import catan.usecase.weather.WeatherDataAccessInterface;
+import catan.usecase.weather.WeatherInputBoundary;
+import catan.usecase.weather.WeatherInteractor;
 import java.awt.Dimension;
 import java.util.Objects;
 import java.util.Random;
@@ -54,13 +56,13 @@ import java.util.concurrent.Executors;
 import javax.swing.JFrame;
 
 /**
- * Creates and connects the components of the application.
- * All concrete dependencies are assembled in this class.
+ * The only place where the concrete classes are created and
+ * connected to each other. Everything else depends on interfaces.
  */
 public class AppBuilder {
 
     private final Random random;
-    private final WeatherGateway weatherGateway;
+    private final WeatherDataAccessInterface weatherDataAccessObject;
     private final GameRepository gameRepository;
     private final Executor backgroundExecutor;
 
@@ -71,29 +73,30 @@ public class AppBuilder {
     private GameOverPresenter gameOverPresenter;
 
     /**
-     * Creates the application with default dependencies.
+     * Creates the application with the Open-Meteo weather service.
      */
     public AppBuilder() {
-        this(new Random(), new WeatherNotConnected(),
+        this(new Random(), new OpenMeteoWeatherDataAccessObject(),
                 new InMemoryGameRepository(), daemonExecutor());
     }
 
     /**
-     * Creates the application with the provided dependencies.
+     * Creates the application with configurable dependencies.
      *
      * @param random the random number generator
-     * @param weatherGateway the weather data gateway
-     * @param gameRepository the repository storing the current game
-     * @param backgroundExecutor the executor for background tasks
+     * @param weatherDataAccessObject the weather data access object
+     * @param gameRepository the game repository
+     * @param backgroundExecutor the background executor
      */
-    public AppBuilder(Random random,
-                      WeatherGateway weatherGateway,
-                      GameRepository gameRepository,
-                      Executor backgroundExecutor) {
+    public AppBuilder(
+            Random random,
+            WeatherDataAccessInterface weatherDataAccessObject,
+            GameRepository gameRepository,
+            Executor backgroundExecutor) {
 
         this.random = Objects.requireNonNull(random, "random");
-        this.weatherGateway = Objects.requireNonNull(
-                weatherGateway, "weatherGateway");
+        this.weatherDataAccessObject = Objects.requireNonNull(
+                weatherDataAccessObject, "weatherDataAccessObject");
         this.gameRepository = Objects.requireNonNull(
                 gameRepository, "gameRepository");
         this.backgroundExecutor = Objects.requireNonNull(
@@ -101,9 +104,9 @@ public class AppBuilder {
     }
 
     /**
-     * Creates the application screens and connects their dependencies.
+     * Creates every screen and connects the components.
      *
-     * @return the screen switcher containing all application screens
+     * @return the screen switcher
      */
     public ScreenSwitcher buildScreens() {
         StartMenuViewModel startMenu = new StartMenuViewModel(
@@ -118,13 +121,16 @@ public class AppBuilder {
         boardViewModel = new BoardViewModel();
         BoardRepository boardRepository = new InMemoryBoardRepository();
 
+        WeatherInputBoundary weatherInteractor =
+                new WeatherInteractor(weatherDataAccessObject);
+
         // UC8: Start Game generates the board, and the game is then played on that same board.
         GenerateBoardController generateBoard = new GenerateBoardController(new GenerateBoardInteractor(
                 gameRepository, boardRepository, new GenerateBoardPresenter(boardViewModel),
                 new BalancedLayoutStrategy()));
 
         StartGameController startGame = new StartGameController(new StartGameInteractor(
-                gameRepository, weatherGateway, new StartGamePresenter(startMenu, game, viewManager,
+                gameRepository, weatherInteractor, new StartGamePresenter(startMenu, game, viewManager,
                 boardViewModel, longestRoadViewModel),
                 random, boardRepository));
 
@@ -147,10 +153,15 @@ public class AppBuilder {
                         longestRoadInteractor));
 
         EndTurnController endTurn = new EndTurnController(
-                new EndTurnInteractor(gameRepository, new EndTurnPresenter(game)));
+                new EndTurnInteractor(
+                        gameRepository,
+                        new EndTurnPresenter(game)));
 
-        RestartGameController restartGame = new RestartGameController(new RestartGameInteractor(
-                gameRepository, new RestartGamePresenter(startMenu, game, gameOver, viewManager)));
+        RestartGameController restartGame = new RestartGameController(
+                new RestartGameInteractor(
+                        gameRepository,
+                        new RestartGamePresenter(
+                                startMenu, game, gameOver, viewManager)));
 
         gameOverPresenter = new GameOverPresenter(gameOver, viewManager);
 
@@ -166,6 +177,7 @@ public class AppBuilder {
         gameView = new GameView(game, endTurn, longestRoadViewModel);
         gameView.setBoardComponent(boardView);
         GameOverView gameOverView = new GameOverView(gameOver, restartGame);
+
         return new ScreenSwitcher(viewManager, startMenuView, gameView, gameOverView);
     }
 
@@ -186,7 +198,7 @@ public class AppBuilder {
     }
 
     /**
-     * Returns the game view after the screens have been built.
+     * Returns the game view after the screens are built.
      *
      * @return the game view
      */
@@ -214,7 +226,7 @@ public class AppBuilder {
     }
 
     /**
-     * Returns the presenter for displaying the game over screen.
+     * Returns the game over presenter.
      *
      * @return the game over presenter
      */
@@ -223,12 +235,11 @@ public class AppBuilder {
     }
 
     /**
-     * Returns a component after verifying that it has been created.
+     * Ensures that a component has been initialized.
      *
-     * @param part the component to check
+     * @param part the component
      * @param <T> the component type
      * @return the initialized component
-     * @throws IllegalStateException if the component has not been created
      */
     private static <T> T requireBuilt(T part) {
         if (part == null) {
@@ -239,7 +250,7 @@ public class AppBuilder {
     }
 
     /**
-     * Creates a daemon executor for background tasks.
+     * Creates a single-threaded daemon executor.
      *
      * @return the executor service
      */
@@ -249,29 +260,5 @@ public class AppBuilder {
             thread.setDaemon(true);
             return thread;
         });
-    }
-
-    /**
-     * Temporary weather gateway used when the weather service
-     * is not connected.
-     */
-    private static final class WeatherNotConnected
-            implements WeatherGateway {
-
-        /**
-         * Reports that weather data is unavailable.
-         *
-         * @param city the selected city
-         * @return the weather code, if available
-         * @throws WeatherUnavailableException because the
-         *         weather service is not connected
-         */
-        @Override
-        public int fetchWeatherCode(CityLocation city)
-                throws WeatherUnavailableException {
-
-            throw new WeatherUnavailableException(
-                    "The weather service is not connected yet");
-        }
     }
 }
