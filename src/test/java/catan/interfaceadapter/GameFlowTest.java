@@ -21,6 +21,7 @@ import catan.interfaceadapter.presenter.RestartGamePresenter;
 import catan.interfaceadapter.presenter.StartGamePresenter;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.ScoreEntry;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
@@ -50,6 +51,7 @@ class GameFlowTest {
     private final GameViewModel gameView = new GameViewModel();
     private final GameOverViewModel gameOverView = new GameOverViewModel();
     private final ViewManagerModel viewManager = new ViewManagerModel();
+    private final LongestRoadViewModel longestRoadViewModel = new LongestRoadViewModel();
 
     private final WeatherDataAccessInterface weather = city -> {
         if (weatherDown) {
@@ -60,8 +62,8 @@ class GameFlowTest {
 
     private final StartGameController startGame = new StartGameController(new StartGameInteractor(
             repository, new WeatherInteractor(weather),
-            new StartGamePresenter(startMenu, gameView, viewManager), new Random(8)));
-
+            new StartGamePresenter(startMenu, gameView, viewManager, longestRoadViewModel),
+            new Random(8)));
     private final PlaceInitialController placeInitial = new PlaceInitialController(
             new PlaceInitialInteractor(repository, new PlaceInitialPresenter(gameView)));
     private final EndTurnController endTurn = new EndTurnController(

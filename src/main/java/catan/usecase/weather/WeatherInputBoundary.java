@@ -12,5 +12,3 @@ public interface WeatherInputBoundary {
    */
   WeatherOutputData execute(WeatherInputData inputData);
 }
-
-

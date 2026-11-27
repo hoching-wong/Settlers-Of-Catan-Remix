@@ -1,4 +1,3 @@
-
 package catan.app;
 
 import catan.entity.BalancedLayoutStrategy;
@@ -23,6 +22,7 @@ import catan.interfaceadapter.presenter.BuildPresenter;
 import catan.interfaceadapter.presenter.EndTurnPresenter;
 import catan.interfaceadapter.presenter.GameOverPresenter;
 import catan.interfaceadapter.presenter.GenerateBoardPresenter;
+import catan.interfaceadapter.presenter.LongestRoadPresenter;
 import catan.interfaceadapter.presenter.PlaceInitialPresenter;
 import catan.interfaceadapter.presenter.RestartGamePresenter;
 import catan.interfaceadapter.presenter.SelectStructurePresenter;
@@ -30,11 +30,14 @@ import catan.interfaceadapter.presenter.StartGamePresenter;
 import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.usecase.build.BuildInteractor;
 import catan.usecase.endturn.EndTurnInteractor;
 import catan.usecase.generateboard.GenerateBoardInteractor;
+import catan.usecase.longestroad.LongestRoadInputBoundary;
+import catan.usecase.longestroad.LongestRoadInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
@@ -66,6 +69,7 @@ public class AppBuilder {
     private GameView gameView;
     private BoardViewModel boardViewModel;
     private PlaceInitialController placeInitialController;
+    private LongestRoadViewModel longestRoadViewModel;
     private GameOverPresenter gameOverPresenter;
 
     /**
@@ -113,6 +117,7 @@ public class AppBuilder {
         GameViewModel game = new GameViewModel();
         GameOverViewModel gameOver = new GameOverViewModel();
         ViewManagerModel viewManager = new ViewManagerModel();
+        longestRoadViewModel = new LongestRoadViewModel();
         boardViewModel = new BoardViewModel();
         BoardRepository boardRepository = new InMemoryBoardRepository();
 
@@ -125,7 +130,8 @@ public class AppBuilder {
                 new BalancedLayoutStrategy()));
 
         StartGameController startGame = new StartGameController(new StartGameInteractor(
-                gameRepository, weatherInteractor, new StartGamePresenter(startMenu, game, viewManager, boardViewModel),
+                gameRepository, weatherInteractor, new StartGamePresenter(startMenu, game, viewManager,
+                boardViewModel, longestRoadViewModel),
                 random, boardRepository));
 
         placeInitialController = new PlaceInitialController(
@@ -135,8 +141,16 @@ public class AppBuilder {
         SelectStructureController selectStructure = new SelectStructureController(
                 new SelectStructureInteractor(gameRepository, new SelectStructurePresenter(boardViewModel)));
 
+        LongestRoadInputBoundary longestRoadInteractor =
+                new LongestRoadInteractor();
+
+        LongestRoadPresenter longestRoadPresenter =
+                new LongestRoadPresenter(longestRoadViewModel);
+
         BuildController build = new BuildController(
-                new BuildInteractor(gameRepository, new BuildPresenter(boardViewModel)));
+                new BuildInteractor(gameRepository,
+                        new BuildPresenter(boardViewModel, longestRoadPresenter),
+                        longestRoadInteractor));
 
         EndTurnController endTurn = new EndTurnController(
                 new EndTurnInteractor(
@@ -160,7 +174,7 @@ public class AppBuilder {
         boardView.getBoardPanel().addClickListener(
                 new InitialPlacementClickListener(boardViewModel, placeInitialController));
 
-        gameView = new GameView(game, endTurn);
+        gameView = new GameView(game, endTurn, longestRoadViewModel);
         gameView.setBoardComponent(boardView);
         GameOverView gameOverView = new GameOverView(gameOver, restartGame);
 
@@ -203,6 +217,15 @@ public class AppBuilder {
     }
 
     /**
+     * Returns the view model containing Longest Road information.
+     *
+     * @return the Longest Road view model
+     */
+    public LongestRoadViewModel getLongestRoadViewModel() {
+        return requireBuilt(longestRoadViewModel);
+    }
+
+    /**
      * Returns the game over presenter.
      *
      * @return the game over presenter
@@ -220,7 +243,8 @@ public class AppBuilder {
      */
     private static <T> T requireBuilt(T part) {
         if (part == null) {
-            throw new IllegalStateException("Call buildScreens() first");
+            throw new IllegalStateException(
+                    "Call buildScreens() first");
         }
         return part;
     }

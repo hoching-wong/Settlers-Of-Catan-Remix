@@ -7,6 +7,7 @@ import catan.framework.persistence.InMemoryGameRepository;
 import catan.interfaceadapter.controller.StartGameController;
 import catan.interfaceadapter.presenter.StartGamePresenter;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel.Screen;
@@ -33,6 +34,7 @@ class StartMenuFlowTest {
             new StartMenuViewModel(CityLocation.defaults().stream().map(CityLocation::getName).toList());
     private final GameViewModel game = new GameViewModel();
     private final ViewManagerModel viewManager = new ViewManagerModel();
+    private final LongestRoadViewModel longestRoadViewModel = new LongestRoadViewModel();
     private boolean weatherDown;
 
     private final WeatherDataAccessInterface weather = city -> {
@@ -43,9 +45,9 @@ class StartMenuFlowTest {
     };
 
     private final StartMenuView view = new StartMenuView(startMenu,
-            new StartGameController(new StartGameInteractor(repository,
-                    new WeatherInteractor(weather),
-                    new StartGamePresenter(startMenu, game, viewManager), new Random(1))),
+            new StartGameController(new StartGameInteractor(repository, new WeatherInteractor(weather),
+                    new StartGamePresenter(startMenu, game, viewManager, longestRoadViewModel),
+                    new Random(1))),
             Runnable::run);
 
     private static <T extends Component> T find(Container root, String name, Class<T> type) {
