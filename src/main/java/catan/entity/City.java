@@ -1,12 +1,12 @@
 package catan.entity;
 
 public class City extends Building {
-    public City(Player owner, Vertex location) {
-        super(owner, location);
-    }
+  public City(Player owner, Vertex location) {
+    super(owner, location);
+  }
 
-    @Override
-    public int getVictoryPoints() {
-        return 2;
-    }
+  @Override
+  public int getVictoryPoints() {
+    return 2;
+  }
 }

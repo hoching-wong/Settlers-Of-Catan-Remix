@@ -3,8 +3,10 @@ package catan.framework.ui.swing;
 import catan.interfaceadapter.controller.EndTurnController;
 import catan.interfaceadapter.controller.RollDiceController;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.beans.PropertyChangeEvent;
@@ -28,6 +30,7 @@ public class GameView extends JPanel implements PropertyChangeListener {
     private final GameViewModel viewModel;
     private final EndTurnController endTurnController;
     private RollDiceController rollDiceController;
+    private final LongestRoadPanel longestRoadPanel;
 
     private final JLabel turnLabel = new JLabel(" ");
     private final JLabel instructionLabel = new JLabel(" ");
@@ -38,10 +41,19 @@ public class GameView extends JPanel implements PropertyChangeListener {
     private final JButton rollDiceButton = new JButton("Roll Dice");
     private final JButton endTurnButton = new JButton("End Turn");
     private final JPanel boardSlot = new JPanel(new BorderLayout());
+    private final JPanel sidePanel = new JPanel(new BorderLayout(0, 8));
 
     public GameView(GameViewModel viewModel, EndTurnController endTurnController) {
+        this(viewModel, endTurnController, null);
+    }
+
+    /** Creates a game view with a Longest Road status panel. */
+    public GameView(GameViewModel viewModel, EndTurnController endTurnController,
+                    LongestRoadViewModel longestRoadViewModel) {
         this.viewModel = Objects.requireNonNull(viewModel, "viewModel");
         this.endTurnController = Objects.requireNonNull(endTurnController, "endTurnController");
+        this.longestRoadPanel = longestRoadViewModel == null
+                ? null : new LongestRoadPanel(longestRoadViewModel);
         buildLayout();
         viewModel.addPropertyChangeListener(this);
         refresh();
@@ -84,6 +96,14 @@ public class GameView extends JPanel implements PropertyChangeListener {
         boardSlot.add(placeholder, BorderLayout.CENTER);
         add(boardSlot, BorderLayout.CENTER);
 
+        if (longestRoadPanel != null) {
+            longestRoadPanel.setBorder(
+                    BorderFactory.createEmptyBorder(8, 12, 8, 8));
+            longestRoadPanel.setPreferredSize(new Dimension(320, 150));
+            sidePanel.add(longestRoadPanel, BorderLayout.NORTH);
+            add(sidePanel, BorderLayout.EAST);
+        }
+
         JPanel footer = new JPanel();
         footer.setLayout(new BoxLayout(footer, BoxLayout.Y_AXIS));
         messageLabel.setAlignmentX(CENTER_ALIGNMENT);
@@ -110,6 +130,34 @@ public class GameView extends JPanel implements PropertyChangeListener {
         boardSlot.add(board, BorderLayout.CENTER);
         boardSlot.revalidate();
         boardSlot.repaint();
+    }
+
+    /**
+     * Adds the game status panel below the Longest Road panel.
+     *
+     * @param statusPanel the panel displaying the current game status
+     */
+    public void setGameStatusPanel(JComponent statusPanel) {
+        Objects.requireNonNull(statusPanel, "statusPanel");
+
+        statusPanel.setPreferredSize(new Dimension(320, 520));
+
+        JComponent previousPanel = (JComponent)
+                ((BorderLayout) sidePanel.getLayout())
+                        .getLayoutComponent(BorderLayout.CENTER);
+
+        if (previousPanel != null) {
+            sidePanel.remove(previousPanel);
+        }
+
+        sidePanel.add(statusPanel, BorderLayout.CENTER);
+
+        if (sidePanel.getParent() != this) {
+            add(sidePanel, BorderLayout.EAST);
+        }
+
+        revalidate();
+        repaint();
     }
 
     @Override

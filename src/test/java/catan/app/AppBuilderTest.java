@@ -17,8 +17,8 @@ import catan.framework.ui.swing.ScreenSwitcher;
 import catan.interfaceadapter.viewmodel.BoardPoint;
 import catan.interfaceadapter.viewmodel.BoardState;
 import catan.interfaceadapter.viewmodel.TileView;
-import catan.usecase.port.WeatherGateway;
-import catan.usecase.port.WeatherUnavailableException;
+import catan.usecase.weather.WeatherDataAccessInterface;
+import catan.usecase.weather.WeatherUnavailableException;
 import catan.usecase.restartgame.GameResult;
 import java.awt.Component;
 import java.awt.Container;
@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 /** The whole application, built the way Main builds it, driven through its Swing components. */
 class AppBuilderTest {
     private final InMemoryGameRepository repository = new InMemoryGameRepository();
-    private final WeatherGateway sunny = city -> 0;
+    private final WeatherDataAccessInterface sunny = city -> 0;
     private final AppBuilder builder = new AppBuilder(new Random(5), sunny, repository, Runnable::run);
     private final ScreenSwitcher app = builder.buildScreens();
 
@@ -224,8 +224,8 @@ class AppBuilderTest {
     }
 
     @Test
-    void theDefaultBuilderStartsGamesWithoutBonusesUntilTheRealGatewayIsPlugged() {
-        // the production constructor uses the stand-in gateway and a background thread
+    void theDefaultBuilderCreatesApplicationWithWeatherService() {
+        // building the screens does not make a weather API request
         AppBuilder production = new AppBuilder();
         assertNotNull(production.buildScreens());
         assertNotNull(production.getGameView());
