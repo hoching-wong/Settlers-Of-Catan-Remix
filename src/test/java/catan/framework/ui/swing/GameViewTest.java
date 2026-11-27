@@ -5,8 +5,10 @@ import static catan.framework.ui.swing.SwingTestSupport.flush;
 import static org.junit.jupiter.api.Assertions.*;
 
 import catan.interfaceadapter.controller.EndTurnController;
+import catan.interfaceadapter.controller.RollDiceController;
 import catan.interfaceadapter.viewmodel.GameViewModel;
 import catan.usecase.endturn.EndTurnInputData;
+import catan.usecase.rolldice.RollDiceInputData;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
@@ -77,6 +79,36 @@ class GameViewTest {
         find(view, "endTurn", JButton.class).doClick();
         find(view, "endTurn", JButton.class).doClick();
         assertEquals(2, endTurnClicks.size());
+    }
+
+    @Test
+    void hasARollDiceButtonBesideEndTurn() {
+        JButton rollDice = find(view, "rollDice", JButton.class);
+        assertNotNull(rollDice);
+        assertEquals("Roll Dice", rollDice.getText());
+        assertSame(find(view, "endTurn", JButton.class).getParent(), rollDice.getParent());
+    }
+
+    @Test
+    void rollDiceButtonCallsTheController() {
+        List<RollDiceInputData> rollClicks = new ArrayList<>();
+        view.setRollDiceController(new RollDiceController(rollClicks::add));
+
+        find(view, "rollDice", JButton.class).doClick();
+        find(view, "rollDice", JButton.class).doClick();
+
+        assertEquals(2, rollClicks.size());
+        assertEquals(0, endTurnClicks.size());
+    }
+
+    @Test
+    void rollDiceButtonDoesNothingWithoutAController() {
+        assertDoesNotThrow(() -> find(view, "rollDice", JButton.class).doClick());
+    }
+
+    @Test
+    void rollDiceControllerCannotBeNull() {
+        assertThrows(NullPointerException.class, () -> view.setRollDiceController(null));
     }
 
     @Test
