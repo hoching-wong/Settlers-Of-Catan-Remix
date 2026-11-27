@@ -13,11 +13,13 @@ import catan.framework.persistence.InMemoryGameRepository;
 import catan.interfaceadapter.controller.EndTurnController;
 import catan.interfaceadapter.controller.PlaceInitialController;
 import catan.interfaceadapter.controller.RestartGameController;
+import catan.interfaceadapter.controller.RollDiceController;
 import catan.interfaceadapter.controller.StartGameController;
 import catan.interfaceadapter.presenter.EndTurnPresenter;
 import catan.interfaceadapter.presenter.GameOverPresenter;
 import catan.interfaceadapter.presenter.PlaceInitialPresenter;
 import catan.interfaceadapter.presenter.RestartGamePresenter;
+import catan.interfaceadapter.presenter.RollDicePresenter;
 import catan.interfaceadapter.presenter.StartGamePresenter;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
@@ -31,6 +33,7 @@ import catan.usecase.port.WeatherGateway;
 import catan.usecase.port.WeatherUnavailableException;
 import catan.usecase.restartgame.GameResult;
 import catan.usecase.restartgame.RestartGameInteractor;
+import catan.usecase.rolldice.RollDiceInteractor;
 import catan.usecase.startgame.StartGameInteractor;
 import java.util.List;
 import java.util.Random;
@@ -61,6 +64,8 @@ class GameFlowTest {
             repository, weather, new StartGamePresenter(startMenu, gameView, viewManager), new Random(8)));
     private final PlaceInitialController placeInitial = new PlaceInitialController(
             new PlaceInitialInteractor(repository, new PlaceInitialPresenter(gameView)));
+    private final RollDiceController roll = new RollDiceController(
+            new RollDiceInteractor(repository, new RollDicePresenter(gameView)));
     private final EndTurnController endTurn = new EndTurnController(
             new EndTurnInteractor(repository, new EndTurnPresenter(gameView)));
     private final RestartGameController restart = new RestartGameController(new RestartGameInteractor(
@@ -135,12 +140,19 @@ class GameFlowTest {
         assertEquals("Roll the dice before ending your turn.", gameView.getErrorMessage());
         assertEquals("Ann", gameView.getCurrentPlayerName());
 
-        game().markRolled(); // the roll-dice use case does this
+        roll.rollDice();
+        assertTrue(gameView.getMessage().startsWith("Ann rolled "), gameView.getMessage());
+        assertEquals("Build or end your turn", gameView.getInstruction());
+        assertEquals("", gameView.getErrorMessage());
+        assertTrue(game().hasRolled());
         endTurn.endTurn();
         assertEquals("", gameView.getErrorMessage());
         assertEquals("Bob", gameView.getCurrentPlayerName());
         assertEquals("Roll the dice", gameView.getInstruction());
         assertEquals("Ann ended their turn.", gameView.getMessage());
+
+        roll.rollDice();
+        assertTrue(gameView.getMessage().startsWith("Bob rolled "), gameView.getMessage());
 
         // --- victory ---
         Player bob = game().getCurrentPlayer();
@@ -156,6 +168,8 @@ class GameFlowTest {
 
         // nothing more can be played
         endTurn.endTurn();
+        assertEquals("The game is over.", gameView.getErrorMessage());
+        roll.rollDice();
         assertEquals("The game is over.", gameView.getErrorMessage());
 
         // --- back to the menu, and a second game works ---
