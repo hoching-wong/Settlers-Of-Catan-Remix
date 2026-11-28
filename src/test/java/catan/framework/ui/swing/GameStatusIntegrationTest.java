@@ -196,7 +196,8 @@ class GameStatusIntegrationTest {
             new BuildInteractor(
                     repository,
                     presenter,
-                    new LongestRoadInteractor());
+                    new LongestRoadInteractor(),
+                    winnerData -> { });
 
     int edgeId =
             PlacementStrategies.standard()
@@ -253,7 +254,8 @@ class GameStatusIntegrationTest {
             new BuildInteractor(
                     repository,
                     presenter,
-                    new LongestRoadInteractor());
+                    new LongestRoadInteractor(),
+                    winnerData -> { });
 
     interactor.execute(
             new BuildInputData(StructureType.ROAD, -1));

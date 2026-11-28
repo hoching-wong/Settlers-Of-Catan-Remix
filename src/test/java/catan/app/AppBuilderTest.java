@@ -17,6 +17,7 @@ import catan.framework.ui.swing.ScreenSwitcher;
 import catan.interfaceadapter.viewmodel.BoardPoint;
 import catan.interfaceadapter.viewmodel.BoardState;
 import catan.interfaceadapter.viewmodel.TileView;
+import catan.usecase.port.FakeWinRecordRepository;
 import catan.usecase.weather.WeatherDataAccessInterface;
 import catan.usecase.weather.WeatherUnavailableException;
 import catan.usecase.restartgame.GameResult;
@@ -37,7 +38,7 @@ import org.junit.jupiter.api.Test;
 class AppBuilderTest {
     private final InMemoryGameRepository repository = new InMemoryGameRepository();
     private final WeatherDataAccessInterface sunny = city -> 0;
-    private final AppBuilder builder = new AppBuilder(new Random(5), sunny, repository, Runnable::run);
+    private final AppBuilder builder = new AppBuilder(new Random(5), sunny, repository, new FakeWinRecordRepository(), Runnable::run);
     private final ScreenSwitcher app = builder.buildScreens();
 
     // ---- helpers ----
@@ -212,7 +213,7 @@ class AppBuilderTest {
     void withoutAWeatherServiceTheGameStillStarts() {
         AppBuilder offline = new AppBuilder(new Random(5), city -> {
             throw new WeatherUnavailableException("offline");
-        }, new InMemoryGameRepository(), Runnable::run);
+        }, new InMemoryGameRepository(), new FakeWinRecordRepository(), Runnable::run);
         ScreenSwitcher offlineApp = offline.buildScreens();
         ((JComboBox<?>) find(offlineApp, "city", JComboBox.class)).setSelectedItem("Tokyo");
         find(offlineApp, "name1", JTextField.class).setText("Ann");
@@ -235,7 +236,7 @@ class AppBuilderTest {
 
     @Test
     void thePartsForOtherPeopleAreOnlyAvailableOnceBuilt() {
-        AppBuilder fresh = new AppBuilder(new Random(1), sunny, new InMemoryGameRepository(), Runnable::run);
+        AppBuilder fresh = new AppBuilder(new Random(1), sunny, new InMemoryGameRepository(), new FakeWinRecordRepository(), Runnable::run);
         assertThrows(IllegalStateException.class, fresh::getGameView);
         assertThrows(IllegalStateException.class, fresh::getPlaceInitialController);
         assertThrows(IllegalStateException.class, fresh::getGameOverPresenter);
@@ -437,7 +438,7 @@ class AppBuilderTest {
 
     @Test
     void theBoardViewModelIsOnlyAvailableOnceBuilt() {
-        AppBuilder fresh = new AppBuilder(new Random(1), sunny, new InMemoryGameRepository(), Runnable::run);
+        AppBuilder fresh = new AppBuilder(new Random(1), sunny, new InMemoryGameRepository(), new FakeWinRecordRepository(), Runnable::run);
         assertThrows(IllegalStateException.class, fresh::getBoardViewModel);
         fresh.buildScreens();
         assertNotNull(fresh.getBoardViewModel());
@@ -445,13 +446,16 @@ class AppBuilderTest {
 
     @Test
     void constructorRejectsNulls() {
+        FakeWinRecordRepository wins = new FakeWinRecordRepository();
         assertThrows(NullPointerException.class,
-                () -> new AppBuilder(null, sunny, repository, Runnable::run));
+                () -> new AppBuilder(null, sunny, repository, wins, Runnable::run));
         assertThrows(NullPointerException.class,
-                () -> new AppBuilder(new Random(), null, repository, Runnable::run));
+                () -> new AppBuilder(new Random(), null, repository, wins, Runnable::run));
         assertThrows(NullPointerException.class,
-                () -> new AppBuilder(new Random(), sunny, null, Runnable::run));
+                () -> new AppBuilder(new Random(), sunny, null, wins, Runnable::run));
         assertThrows(NullPointerException.class,
-                () -> new AppBuilder(new Random(), sunny, repository, null));
+                () -> new AppBuilder(new Random(), sunny, repository, null, Runnable::run));
+        assertThrows(NullPointerException.class,
+                () -> new AppBuilder(new Random(), sunny, repository, wins, null));
     }
 }

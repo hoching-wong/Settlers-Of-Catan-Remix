@@ -1,6 +1,7 @@
 package catan.framework.ui.swing;
 
 import catan.interfaceadapter.controller.GenerateBoardController;
+import catan.interfaceadapter.controller.LeaderboardController;
 import catan.interfaceadapter.controller.StartGameController;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import java.awt.Color;
@@ -8,12 +9,14 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Window;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -39,6 +42,8 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
     private final StartGameController controller;
     private final Executor backgroundExecutor;
     private GenerateBoardController generateBoardController;
+    private LeaderboardController leaderboardController;
+    private Consumer<Window> openLeaderboard;
 
     private final JComboBox<Integer> playerCountBox = new JComboBox<>();
     private final JLabel[] nameLabels = new JLabel[MAX_PLAYERS];
@@ -47,6 +52,7 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
     private final WeatherSelectionPanel weatherPanel;
 
     private final JButton startButton = new JButton(START_TEXT);
+    private final JButton leaderboardButton = new JButton("Leaderboard");
     private final JLabel errorLabel =
             new JLabel(" ", SwingConstants.CENTER);
 
@@ -102,6 +108,10 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
 
         startButton.setName("start");
         startButton.addActionListener(event -> startGame());
+
+        leaderboardButton.setName("leaderboard");
+        leaderboardButton.setVisible(false);
+        leaderboardButton.addActionListener(event -> showLeaderboard());
 
         errorLabel.setName("startMenuError");
         errorLabel.setForeground(new Color(0xB00020));
@@ -166,6 +176,9 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
         c.gridy++;
         add(startButton, c);
 
+        c.gridy++;
+        add(leaderboardButton, c);
+
         updateNameFieldVisibility();
     }
 
@@ -228,6 +241,23 @@ public class StartMenuView extends JPanel implements PropertyChangeListener {
      */
     public void setGenerateBoardController(GenerateBoardController generateBoardController) {
         this.generateBoardController = generateBoardController;
+    }
+
+    /**
+     * Turns on the Leaderboard button. Pressing it loads the leaderboard first and then opens the dialog.
+     *
+     * @param controller loads the leaderboard into its view model
+     * @param openDialog opens the leaderboard dialog over the given window (null if there is none)
+     */
+    public void setLeaderboard(LeaderboardController controller, Consumer<Window> openDialog) {
+        this.leaderboardController = Objects.requireNonNull(controller, "controller");
+        this.openLeaderboard = Objects.requireNonNull(openDialog, "openDialog");
+        leaderboardButton.setVisible(true);
+    }
+
+    private void showLeaderboard() {
+        leaderboardController.show();
+        openLeaderboard.accept(SwingUtilities.getWindowAncestor(this));
     }
 
     /**

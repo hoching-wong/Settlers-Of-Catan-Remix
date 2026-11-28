@@ -14,6 +14,8 @@ import catan.usecase.longestroad.LongestRoadInputBoundary;
 import catan.usecase.longestroad.LongestRoadInputData;
 import catan.usecase.longestroad.LongestRoadOutputData;
 import catan.usecase.port.GameRepository;
+import catan.usecase.recordwin.RecordWinInputBoundary;
+import catan.usecase.recordwin.RecordWinInputData;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -21,7 +23,8 @@ import java.util.Optional;
 
 /**
  * Use case 1. Checks the build with a chain of rules (turn, dice, cost, location), then pays,
- * places the structure, updates Longest Road (use case 6) and checks for a winner (use case 7).
+ * places the structure, updates Longest Road (use case 6), checks for a winner (use case 7) and
+ * records the winner's win (use case 9).
  */
 public class BuildInteractor implements BuildInputBoundary {
     private final GameRepository repository;
@@ -29,23 +32,27 @@ public class BuildInteractor implements BuildInputBoundary {
     private final PlacementStrategies placements;
     private final BuildRule rules;
     private final LongestRoadInputBoundary longestRoadInteractor;
+    private final RecordWinInputBoundary recordWin;
 
     /** The normal road, settlement and city rules. */
     public BuildInteractor(GameRepository repository, BuildOutputBoundary presenter,
-                           LongestRoadInputBoundary longestRoadInteractor) {
+                           LongestRoadInputBoundary longestRoadInteractor,
+                           RecordWinInputBoundary recordWin) {
         this(repository, presenter, PlacementStrategies.standard(),
-                BuildRules.forPlacing(), longestRoadInteractor);
+                BuildRules.forPlacing(), longestRoadInteractor, recordWin);
     }
 
     public BuildInteractor(GameRepository repository, BuildOutputBoundary presenter,
                            PlacementStrategies placements, BuildRule rules,
-                           LongestRoadInputBoundary longestRoadInteractor) {
+                           LongestRoadInputBoundary longestRoadInteractor,
+                           RecordWinInputBoundary recordWin) {
         this.repository = Objects.requireNonNull(repository, "repository");
         this.presenter = Objects.requireNonNull(presenter, "presenter");
         this.placements = Objects.requireNonNull(placements, "placements");
         this.rules = Objects.requireNonNull(rules, "rules");
         this.longestRoadInteractor = Objects.requireNonNull(
                 longestRoadInteractor, "longestRoadInteractor");
+        this.recordWin = Objects.requireNonNull(recordWin, "recordWin");
     }
 
     @Override
@@ -71,6 +78,9 @@ public class BuildInteractor implements BuildInputBoundary {
 
         boolean gameOver = game.checkVictory();
         repository.save(game);
+        if (gameOver) {
+            recordWin.recordWin(new RecordWinInputData(game.getWinner().getName()));
+        }
 
         presenter.prepareSuccessView(new BuildOutputData(
                 inputData.structure().name(),

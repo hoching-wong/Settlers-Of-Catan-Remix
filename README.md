@@ -128,7 +128,7 @@ As a player, I want to win the game (stop the game) if someone reaches 10 points
 As a player, I want the game board to be randomly generated at the start of each new game so that each game offers a new layout and strategy.
 
 ### User Story 9
-As a player, I want to the ability to check a leaderboard in which player names and their total games won are permanently tracked and stored.
+As a player, I want the ability to check a leaderboard in which player names and their total games won are permanently tracked and stored.
 
 --
 
@@ -350,26 +350,41 @@ Post conditions:
 - The game state successfully transitions to the initial setup phase
 
 ### Use Case 9
-Primary actor: System
-Goal: Automatically records and permanently saves game win statistics (player name and total wins) to a persistent file after a game concludes
+Primary actor: System (recording a win), Player (viewing the leaderboard)
+Goal: Automatically records and permanently saves game win statistics (player name and total wins) to a persistent file after a game concludes, and lets a player view a leaderboard built from them
 Preconditions:
-- A game has reached its winning condition (a player reached 10 victory points)
+- Recording: a game has reached its winning condition (a player reached 10 victory points)
+- Viewing: the player is on the start menu
 
-Main path:
-1. The system detects the game-over event and retrieves the winning player's name 
-2. The system opens the local persistent storage file (e.g., game_stats.json)
-3. The system reads the existing win history data from the file 
-4. The system updates the winning player's record by incrementing their total win count by 1 (or adds a new entry if the player has no previous wins)
-5. The system writes and saves the updated win records back into the persistent JSON file 
-6. The system confirms the data has been securely saved and proceeds to display the victory screen
+Main path (recording a win):
+1. The system detects the game-over event and retrieves the winning player's name
+2. The system opens the local persistent storage file (`data/game_stats.json`)
+3. The system reads the existing win history data from the file
+4. The system updates the winning player's record by incrementing their total win count by 1 (or adds a new entry with 1 win if the player has no previous wins). Names are matched ignoring letter case and surrounding whitespace, and the spelling first recorded is kept
+5. The system writes the updated win records to a temporary file and then replaces the JSON file with it, so a failed write never damages the stored records
+6. The system logs the result. Nothing is shown on screen, the win is recorded before any victory screen is shown, and a failure to record never stops the game
 
-Alternate path:
-2. If the storage file does not exist, the system automatically creates a new JSON file with the initial win record structure
-5. If the file write operation fails due to system permissions or I/O errors, the system attempts a retry and logs the error to prevent data loss
+Alternate path (recording a win):
+2. If the storage file (or its `data` folder) does not exist, the system automatically creates a new JSON file with the initial win record structure
+3. If the stored data cannot be understood (invalid JSON, wrong structure, a negative win count, or the same player twice), the system moves the file to `game_stats.json.bak`, replacing any earlier backup, and records the win in a new file
+5. If the file write operation fails due to system permissions or I/O errors, the system does not retry; the previously stored records stay unchanged, the error is logged and the game continues
+
+Main path (viewing the leaderboard):
+1. The player clicks **Leaderboard** on the start menu
+2. The system reads the win records from the storage file without changing it
+3. The system sorts the players by total wins, highest first, with ties ordered by name (ignoring letter case), and ranks them so that players with the same number of wins share a rank (for example 1, 2, 2, 4)
+4. The system opens a dialog listing the rank, name and total wins of the top five rows
+
+Alternate path (viewing the leaderboard):
+2. If nothing has been recorded yet, the dialog shows "No records yet."
+2. If the file cannot be read or is corrupted, the dialog shows a short error message instead of the list, the details are logged, and the file is left untouched
+4. If a tie continues past the fifth row, the rows after the fifth are not shown
 
 Post conditions:
-- The winning player's name and updated total win count are permanently saved to a file on the system 
+- The winning player's name and updated total win count are permanently saved to a file on the system
 - The stored win data persists across application restarts
+- Unreadable stored data is set aside as a backup instead of being lost
+- Viewing the leaderboard never changes the stored data
 
 ---
 
