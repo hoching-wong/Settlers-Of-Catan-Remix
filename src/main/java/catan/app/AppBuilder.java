@@ -4,17 +4,21 @@ import catan.entity.BalancedLayoutStrategy;
 import catan.entity.CityLocation;
 import catan.framework.persistence.InMemoryBoardRepository;
 import catan.framework.persistence.InMemoryGameRepository;
+import catan.framework.persistence.JsonFileWinRecordRepository;
 import catan.framework.ui.swing.BoardView;
 import catan.framework.ui.swing.GameOverView;
 import catan.framework.ui.swing.GameStatusPanel;
 import catan.framework.ui.swing.GameView;
 import catan.framework.ui.swing.InitialPlacementClickListener;
+import catan.framework.ui.swing.LeaderboardDialog;
+import catan.framework.ui.swing.LeaderboardPanel;
 import catan.framework.ui.swing.ScreenSwitcher;
 import catan.framework.ui.swing.StartMenuView;
 import catan.framework.weather.OpenMeteoWeatherDataAccessObject;
 import catan.interfaceadapter.controller.BuildController;
 import catan.interfaceadapter.controller.EndTurnController;
 import catan.interfaceadapter.controller.GenerateBoardController;
+import catan.interfaceadapter.controller.LeaderboardController;
 import catan.interfaceadapter.controller.PlaceInitialController;
 import catan.interfaceadapter.controller.RestartGameController;
 import catan.interfaceadapter.controller.SelectStructureController;
@@ -24,8 +28,10 @@ import catan.interfaceadapter.presenter.BuildPresenter;
 import catan.interfaceadapter.presenter.EndTurnPresenter;
 import catan.interfaceadapter.presenter.GameOverPresenter;
 import catan.interfaceadapter.presenter.GenerateBoardPresenter;
+import catan.interfaceadapter.presenter.LeaderboardPresenter;
 import catan.interfaceadapter.presenter.LongestRoadPresenter;
 import catan.interfaceadapter.presenter.PlaceInitialPresenter;
+import catan.interfaceadapter.presenter.RecordWinPresenter;
 import catan.interfaceadapter.presenter.RestartGamePresenter;
 import catan.interfaceadapter.presenter.SelectStructurePresenter;
 import catan.interfaceadapter.presenter.StartGamePresenter;
@@ -34,17 +40,21 @@ import catan.interfaceadapter.viewmodel.BoardViewModel;
 import catan.interfaceadapter.viewmodel.GameOverViewModel;
 import catan.interfaceadapter.viewmodel.GameStatusViewModel;
 import catan.interfaceadapter.viewmodel.GameViewModel;
+import catan.interfaceadapter.viewmodel.LeaderboardViewModel;
 import catan.interfaceadapter.viewmodel.LongestRoadViewModel;
 import catan.interfaceadapter.viewmodel.StartMenuViewModel;
 import catan.interfaceadapter.viewmodel.ViewManagerModel;
 import catan.usecase.build.BuildInteractor;
 import catan.usecase.endturn.EndTurnInteractor;
 import catan.usecase.generateboard.GenerateBoardInteractor;
+import catan.usecase.leaderboard.LeaderboardInteractor;
 import catan.usecase.longestroad.LongestRoadInputBoundary;
 import catan.usecase.longestroad.LongestRoadInteractor;
 import catan.usecase.placeinitial.PlaceInitialInteractor;
 import catan.usecase.port.BoardRepository;
 import catan.usecase.port.GameRepository;
+import catan.usecase.port.WinRecordRepository;
+import catan.usecase.recordwin.RecordWinInteractor;
 import catan.usecase.restartgame.RestartGameInteractor;
 import catan.usecase.selectstructure.SelectStructureInteractor;
 import catan.usecase.startgame.StartGameInteractor;
@@ -53,11 +63,14 @@ import catan.usecase.weather.WeatherDataAccessInterface;
 import catan.usecase.weather.WeatherInputBoundary;
 import catan.usecase.weather.WeatherInteractor;
 import java.awt.Dimension;
+import java.awt.Window;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.BiConsumer;
 import javax.swing.JFrame;
 
 /**
@@ -69,7 +82,11 @@ public class AppBuilder {
     private final Random random;
     private final WeatherDataAccessInterface weatherDataAccessObject;
     private final GameRepository gameRepository;
+    private final WinRecordRepository winRecordRepository;
     private final Executor backgroundExecutor;
+    private final System.Logger logger = System.getLogger("catan");
+    private BiConsumer<Window, LeaderboardPanel> leaderboardOpener =
+            (window, panel) -> new LeaderboardDialog(window, panel).open();
 
     private GameView gameView;
     private BoardViewModel boardViewModel;
@@ -82,7 +99,8 @@ public class AppBuilder {
      */
     public AppBuilder() {
         this(new Random(), new OpenMeteoWeatherDataAccessObject(),
-                new InMemoryGameRepository(), daemonExecutor());
+                new InMemoryGameRepository(),
+                new JsonFileWinRecordRepository(Path.of("data", "game_stats.json")), daemonExecutor());
     }
 
     /**
@@ -91,12 +109,14 @@ public class AppBuilder {
      * @param random the random number generator
      * @param weatherDataAccessObject the weather data access object
      * @param gameRepository the game repository
+     * @param winRecordRepository where the win records are kept
      * @param backgroundExecutor the background executor
      */
     public AppBuilder(
             Random random,
             WeatherDataAccessInterface weatherDataAccessObject,
             GameRepository gameRepository,
+            WinRecordRepository winRecordRepository,
             Executor backgroundExecutor) {
 
         this.random = Objects.requireNonNull(random, "random");
@@ -104,8 +124,18 @@ public class AppBuilder {
                 weatherDataAccessObject, "weatherDataAccessObject");
         this.gameRepository = Objects.requireNonNull(
                 gameRepository, "gameRepository");
+        this.winRecordRepository = Objects.requireNonNull(
+                winRecordRepository, "winRecordRepository");
         this.backgroundExecutor = Objects.requireNonNull(
                 backgroundExecutor, "backgroundExecutor");
+    }
+
+    /**
+     * Changes how the leaderboard dialog is opened. Call it before {@link #buildScreens()}. Tests
+     * use it because a modal dialog would wait for a player to close it.
+     */
+    void setLeaderboardOpener(BiConsumer<Window, LeaderboardPanel> opener) {
+        this.leaderboardOpener = Objects.requireNonNull(opener, "opener");
     }
 
     /**
@@ -192,8 +222,8 @@ public class AppBuilder {
                                         longestRoadPresenter,
                                         statusController::execute),
                                 longestRoadInteractor,
-                                // TODO(UC9 step 9): replace with the real RecordWin use case.
-                                winnerData -> { }));
+                                new RecordWinInteractor(
+                                        winRecordRepository, new RecordWinPresenter(logger))));
 
         EndTurnController endTurn =
                 new EndTurnController(
@@ -213,6 +243,14 @@ public class AppBuilder {
 
         StartMenuView startMenuView = new StartMenuView(startMenu, startGame, backgroundExecutor);
         startMenuView.setGenerateBoardController(generateBoard);
+
+        // US9: the leaderboard is loaded when its button is pressed, then shown in a dialog.
+        LeaderboardViewModel leaderboardViewModel = new LeaderboardViewModel();
+        LeaderboardPanel leaderboardPanel = new LeaderboardPanel(leaderboardViewModel);
+        LeaderboardController leaderboard = new LeaderboardController(
+                new LeaderboardInteractor(
+                        winRecordRepository, new LeaderboardPresenter(leaderboardViewModel, logger)));
+        startMenuView.setLeaderboard(leaderboard, window -> leaderboardOpener.accept(window, leaderboardPanel));
 
         BoardView boardView = new BoardView(boardViewModel);
         boardView.setSelectStructureController(selectStructure);

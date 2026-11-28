@@ -1,7 +1,5 @@
 package catan.app;
 
-import static catan.framework.ui.swing.SwingTestSupport.find;
-import static catan.framework.ui.swing.SwingTestSupport.flush;
 import static org.junit.jupiter.api.Assertions.*;
 
 import catan.entity.Board;
@@ -27,6 +25,7 @@ import java.awt.Container;
 import java.awt.event.MouseEvent;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +36,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -78,6 +78,29 @@ class AppBuilderWinRecordsTest {
 
     private static String cell(JTable table, int row, int column) {
         return String.valueOf(table.getValueAt(row, column));
+    }
+
+    private static <T extends Component> T find(Container root, String name, Class<T> type) {
+        for (Component c : root.getComponents()) {
+            if (name.equals(c.getName()) && type.isInstance(c)) {
+                return type.cast(c);
+            }
+            if (c instanceof Container inner) {
+                T found = find(inner, name, type);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static void flush() {
+        try {
+            SwingUtilities.invokeAndWait(() -> { });
+        } catch (InterruptedException | InvocationTargetException e) {
+            throw new AssertionError(e);
+        }
     }
 
     // ---- driving a game ----
