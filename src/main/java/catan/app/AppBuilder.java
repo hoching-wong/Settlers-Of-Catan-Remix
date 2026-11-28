@@ -191,7 +191,9 @@ public class AppBuilder {
                                         boardViewModel,
                                         longestRoadPresenter,
                                         statusController::execute),
-                                longestRoadInteractor));
+                                longestRoadInteractor,
+                                // TODO(UC9 step 9): replace with the real RecordWin use case.
+                                winnerData -> { }));
 
         EndTurnController endTurn =
                 new EndTurnController(
