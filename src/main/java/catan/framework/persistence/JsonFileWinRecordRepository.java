@@ -27,94 +27,100 @@ import org.json.JSONObject;
  */
 public class JsonFileWinRecordRepository implements WinRecordRepository {
 
-    private final Path file;
+  private final Path file;
 
-    public JsonFileWinRecordRepository(Path file) {
-        this.file = Objects.requireNonNull(file, "file");
-    }
+  /**
+   * Creates a repository that keeps its records in one file.
+   *
+   * @param file the JSON file, for example {@code data/game_stats.json}
+   */
+  public JsonFileWinRecordRepository(Path file) {
+    this.file = Objects.requireNonNull(file, "file");
+  }
 
-    @Override
-    public List<WinRecord> load() throws WinRecordStorageException {
-        if (!Files.exists(file)) {
-            return new ArrayList<>();
-        }
-        String text;
-        try {
-            text = Files.readString(file, StandardCharsets.UTF_8);
-        } catch (CharacterCodingException e) {
-            throw new CorruptedWinRecordsException("The file is not valid UTF-8: " + file, e);
-        } catch (IOException e) {
-            throw new WinRecordStorageException("Cannot read " + file, e);
-        }
-        try {
-            return parse(text);
-        } catch (JSONException | IllegalArgumentException e) {
-            throw new CorruptedWinRecordsException("Cannot understand " + file + ": " + e.getMessage(), e);
-        }
+  @Override
+  public List<WinRecord> load() throws WinRecordStorageException {
+    if (!Files.exists(file)) {
+      return new ArrayList<>();
     }
+    String text;
+    try {
+      text = Files.readString(file, StandardCharsets.UTF_8);
+    } catch (CharacterCodingException e) {
+      throw new CorruptedWinRecordsException("The file is not valid UTF-8: " + file, e);
+    } catch (IOException e) {
+      throw new WinRecordStorageException("Cannot read " + file, e);
+    }
+    try {
+      return parse(text);
+    } catch (JSONException | IllegalArgumentException e) {
+      throw new CorruptedWinRecordsException(
+          "Cannot understand " + file + ": " + e.getMessage(), e);
+    }
+  }
 
-    private static List<WinRecord> parse(String text) {
-        JSONArray array = new JSONObject(text).optJSONArray("records");
-        if (array == null) {
-            throw new JSONException("\"records\" is missing or is not an array");
-        }
-        List<WinRecord> records = new ArrayList<>();
-        Set<String> keys = new HashSet<>();
-        for (int i = 0; i < array.length(); i++) {
-            JSONObject entry = array.optJSONObject(i);
-            if (entry == null) {
-                throw new JSONException("Entry " + i + " is not an object");
-            }
-            if (!(entry.opt("name") instanceof String name)) {
-                throw new JSONException("Entry " + i + " has no text \"name\"");
-            }
-            if (!(entry.opt("wins") instanceof Integer wins)) {
-                throw new JSONException("Entry " + i + " has no whole-number \"wins\"");
-            }
-            WinRecord record = new WinRecord(name, wins); // throws IllegalArgumentException if invalid
-            if (!keys.add(record.key())) {
-                throw new JSONException("Entry " + i + " repeats the player " + record.name());
-            }
-            records.add(record);
-        }
-        return records;
+  private static List<WinRecord> parse(String text) {
+    JSONArray array = new JSONObject(text).optJSONArray("records");
+    if (array == null) {
+      throw new JSONException("\"records\" is missing or is not an array");
     }
+    List<WinRecord> records = new ArrayList<>();
+    Set<String> keys = new HashSet<>();
+    for (int i = 0; i < array.length(); i++) {
+      JSONObject entry = array.optJSONObject(i);
+      if (entry == null) {
+        throw new JSONException("Entry " + i + " is not an object");
+      }
+      if (!(entry.opt("name") instanceof String name)) {
+        throw new JSONException("Entry " + i + " has no text \"name\"");
+      }
+      if (!(entry.opt("wins") instanceof Integer wins)) {
+        throw new JSONException("Entry " + i + " has no whole-number \"wins\"");
+      }
+      WinRecord record = new WinRecord(name, wins); // throws IllegalArgumentException if invalid
+      if (!keys.add(record.key())) {
+        throw new JSONException("Entry " + i + " repeats the player " + record.name());
+      }
+      records.add(record);
+    }
+    return records;
+  }
 
-    @Override
-    public void save(List<WinRecord> records) throws WinRecordStorageException {
-        JSONArray array = new JSONArray();
-        for (WinRecord record : records) {
-            array.put(new JSONObject().put("name", record.name()).put("wins", record.wins()));
-        }
-        String text = new JSONObject().put("records", array).toString(2);
-        Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
-        try {
-            Path parent = file.toAbsolutePath().getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-            Files.writeString(tmp, text, StandardCharsets.UTF_8);
-            try {
-                Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                Files.deleteIfExists(tmp);
-                throw e;
-            }
-        } catch (IOException e) {
-            throw new WinRecordStorageException("Cannot write " + file, e);
-        }
+  @Override
+  public void save(List<WinRecord> records) throws WinRecordStorageException {
+    JSONArray array = new JSONArray();
+    for (WinRecord record : records) {
+      array.put(new JSONObject().put("name", record.name()).put("wins", record.wins()));
     }
+    String text = new JSONObject().put("records", array).toString(2);
+    Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
+    try {
+      Path parent = file.toAbsolutePath().getParent();
+      if (parent != null) {
+        Files.createDirectories(parent);
+      }
+      Files.writeString(tmp, text, StandardCharsets.UTF_8);
+      try {
+        Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+      } catch (IOException e) {
+        Files.deleteIfExists(tmp);
+        throw e;
+      }
+    } catch (IOException e) {
+      throw new WinRecordStorageException("Cannot write " + file, e);
+    }
+  }
 
-    @Override
-    public void discardCorrupted() throws WinRecordStorageException {
-        if (!Files.exists(file)) {
-            return;
-        }
-        Path bak = file.resolveSibling(file.getFileName() + ".bak");
-        try {
-            Files.move(file, bak, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new WinRecordStorageException("Cannot set " + file + " aside", e);
-        }
+  @Override
+  public void discardCorrupted() throws WinRecordStorageException {
+    if (!Files.exists(file)) {
+      return;
     }
+    Path bak = file.resolveSibling(file.getFileName() + ".bak");
+    try {
+      Files.move(file, bak, StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException e) {
+      throw new WinRecordStorageException("Cannot set " + file + " aside", e);
+    }
+  }
 }

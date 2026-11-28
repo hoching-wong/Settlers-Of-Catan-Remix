@@ -7,13 +7,19 @@ import java.util.Objects;
 /** Asks for the leaderboard to be loaded. */
 public class LeaderboardController {
 
-    private final LeaderboardInputBoundary interactor;
+  private final LeaderboardInputBoundary interactor;
 
-    public LeaderboardController(LeaderboardInputBoundary interactor) {
-        this.interactor = Objects.requireNonNull(interactor);
-    }
+  /**
+   * Creates the controller.
+   *
+   * @param interactor the use case that loads the leaderboard
+   */
+  public LeaderboardController(LeaderboardInputBoundary interactor) {
+    this.interactor = Objects.requireNonNull(interactor);
+  }
 
-    public void show() {
-        interactor.showLeaderboard(new LeaderboardInputData());
-    }
+  /** Asks for the leaderboard to be loaded into its view model. */
+  public void show() {
+    interactor.showLeaderboard(new LeaderboardInputData());
+  }
 }

@@ -9,24 +9,31 @@ import java.util.Objects;
 /** Puts the leaderboard into its view model. The detail of a failure goes to the log only. */
 public class LeaderboardPresenter implements LeaderboardOutputBoundary {
 
-    private final LeaderboardViewModel viewModel;
-    private final System.Logger logger;
+  private final LeaderboardViewModel viewModel;
+  private final System.Logger logger;
 
-    public LeaderboardPresenter(LeaderboardViewModel viewModel, System.Logger logger) {
-        this.viewModel = Objects.requireNonNull(viewModel);
-        this.logger = Objects.requireNonNull(logger);
-    }
+  /**
+   * Creates the presenter.
+   *
+   * @param viewModel the view model to update
+   * @param logger where the detail of a failure is logged
+   */
+  public LeaderboardPresenter(LeaderboardViewModel viewModel, System.Logger logger) {
+    this.viewModel = Objects.requireNonNull(viewModel);
+    this.logger = Objects.requireNonNull(logger);
+  }
 
-    @Override
-    public void presentLeaderboard(LeaderboardOutputData outputData) {
-        viewModel.showRows(outputData.rows().stream()
-                .map(row -> new LeaderboardRow(row.rank(), row.name(), row.wins()))
-                .toList());
-    }
+  @Override
+  public void presentLeaderboard(LeaderboardOutputData outputData) {
+    viewModel.showRows(
+        outputData.rows().stream()
+            .map(row -> new LeaderboardRow(row.rank(), row.name(), row.wins()))
+            .toList());
+  }
 
-    @Override
-    public void presentError(String userMessage, String detail) {
-        logger.log(System.Logger.Level.WARNING, "Could not load the leaderboard: " + detail);
-        viewModel.showError(userMessage);
-    }
+  @Override
+  public void presentError(String userMessage, String detail) {
+    logger.log(System.Logger.Level.WARNING, "Could not load the leaderboard: " + detail);
+    viewModel.showError(userMessage);
+  }
 }

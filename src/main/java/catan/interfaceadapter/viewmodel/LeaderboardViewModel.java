@@ -9,30 +9,30 @@ import java.util.Objects;
  */
 public class LeaderboardViewModel extends ViewModel {
 
-    public static final String LEADERBOARD = "leaderboard";
+  public static final String LEADERBOARD = "leaderboard";
 
-    private List<LeaderboardRow> rows = List.of();
-    private String errorMessage = "";
+  private List<LeaderboardRow> rows = List.of();
+  private String errorMessage = "";
 
-    public List<LeaderboardRow> getRows() {
-        return rows;
-    }
+  public List<LeaderboardRow> getRows() {
+    return rows;
+  }
 
-    public String getErrorMessage() {
-        return errorMessage;
-    }
+  public String getErrorMessage() {
+    return errorMessage;
+  }
 
-    /** Shows these rows and clears any error. */
-    public void showRows(List<LeaderboardRow> newRows) {
-        this.rows = List.copyOf(newRows);
-        this.errorMessage = "";
-        firePropertyChanged(LEADERBOARD, this);
-    }
+  /** Shows these rows and clears any error. */
+  public void showRows(List<LeaderboardRow> newRows) {
+    this.rows = List.copyOf(newRows);
+    this.errorMessage = "";
+    firePropertyChanged(LEADERBOARD, this);
+  }
 
-    /** Shows this error and clears any rows. */
-    public void showError(String message) {
-        this.errorMessage = Objects.requireNonNull(message, "message");
-        this.rows = List.of();
-        firePropertyChanged(LEADERBOARD, this);
-    }
+  /** Shows this error and clears any rows. */
+  public void showError(String message) {
+    this.errorMessage = Objects.requireNonNull(message, "message");
+    this.rows = List.of();
+    firePropertyChanged(LEADERBOARD, this);
+  }
 }
