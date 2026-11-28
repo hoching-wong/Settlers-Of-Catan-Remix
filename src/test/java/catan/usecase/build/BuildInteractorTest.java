@@ -17,6 +17,7 @@ import catan.usecase.TestGames;
 import catan.usecase.boardstate.BoardSnapshot;
 import catan.usecase.build.placement.PlacementStrategies;
 import catan.usecase.longestroad.LongestRoadInteractor;
+import catan.usecase.recordwin.RecordWinInputBoundary;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -26,8 +27,10 @@ import org.junit.jupiter.api.Test;
 class BuildInteractorTest {
     private final FakeGameRepository repo = new FakeGameRepository();
     private final Recorder presenter = new Recorder();
+    private final List<String> recordedWinners = new ArrayList<>();
+    private final RecordWinInputBoundary recordWin = data -> recordedWinners.add(data.winnerName());
     private final BuildInteractor interactor =
-            new BuildInteractor(repo, presenter, new LongestRoadInteractor());
+            new BuildInteractor(repo, presenter, new LongestRoadInteractor(), recordWin);
     private final PlacementStrategies placements = PlacementStrategies.standard();
 
     private static class Recorder implements BuildOutputBoundary {
@@ -204,8 +207,8 @@ class BuildInteractorTest {
         assertUnchanged(bobBefore, bob);
     }
 
-    @Test
-    void reachingTenPointsEndsTheGame() {
+    /** Ann has rolled and holds 9 points; upgrading her first settlement wins the game. */
+    private Game gameOneUpgradeFromWinning() {
         Game game = readyGame();
         Player ann = game.getCurrentPlayer();
         Board board = game.getBoard();
@@ -219,14 +222,81 @@ class BuildInteractorTest {
             }
         }
         assertEquals(9, ann.getVictoryPoints());
-        Building settlement = ann.getBuildings().get(0);
-        interactor.execute(new BuildInputData(StructureType.CITY, settlement.getLocation().getId()));
+        return game;
+    }
+
+    private static BuildInputData winningUpgrade(Game game) {
+        Building settlement = game.getCurrentPlayer().getBuildings().get(0);
+        return new BuildInputData(StructureType.CITY, settlement.getLocation().getId());
+    }
+
+    @Test
+    void reachingTenPointsEndsTheGame() {
+        Game game = gameOneUpgradeFromWinning();
+        interactor.execute(winningUpgrade(game));
         assertTrue(presenter.success.gameOver());
         assertEquals("Ann", presenter.success.winnerName());
         assertEquals(GamePhase.GAME_OVER, game.getPhase());
 
         interactor.execute(new BuildInputData(StructureType.ROAD, 0));
         assertEquals("The game is over.", presenter.error);
+        assertEquals(List.of("Ann"), recordedWinners, "a build after the game is over must not record again");
+    }
+
+    // ---- recording the win (UC9) ----
+
+    @Test
+    void aWinIsRecordedOnceWithTheWinnersName() {
+        Game game = gameOneUpgradeFromWinning();
+
+        interactor.execute(winningUpgrade(game));
+
+        assertEquals(List.of("Ann"), recordedWinners);
+    }
+
+    @Test
+    void aBuildThatDoesNotWinRecordsNothing() {
+        Game game = readyGame();
+
+        interactor.execute(new BuildInputData(StructureType.ROAD, firstValid(game, StructureType.ROAD)));
+
+        assertNull(presenter.error);
+        assertFalse(presenter.success.gameOver());
+        assertTrue(recordedWinners.isEmpty());
+    }
+
+    @Test
+    void aFailedBuildRecordsNothing() {
+        readyGame();
+
+        interactor.execute(new BuildInputData(StructureType.ROAD, -1));
+
+        assertNotNull(presenter.error);
+        assertTrue(recordedWinners.isEmpty());
+    }
+
+    @Test
+    void noGameInProgressRecordsNothing() {
+        repo.game = null;
+
+        interactor.execute(new BuildInputData(StructureType.ROAD, 0));
+
+        assertEquals("No game is in progress.", presenter.error);
+        assertTrue(recordedWinners.isEmpty());
+    }
+
+    @Test
+    void theWinIsRecordedAfterTheGameIsSavedAndBeforeTheResultIsPresented() {
+        Game game = gameOneUpgradeFromWinning();
+        List<String> seen = new ArrayList<>();
+        BuildInteractor checking = new BuildInteractor(repo, presenter, new LongestRoadInteractor(), data -> {
+            seen.add("saves=" + repo.gameSaves + ",presented=" + (presenter.success != null));
+        });
+
+        checking.execute(winningUpgrade(game));
+
+        assertEquals(List.of("saves=1,presented=false"), seen);
+        assertNotNull(presenter.success);
     }
 
     @Test
@@ -243,7 +313,7 @@ class BuildInteractorTest {
             assertTrue(game.getBoard().getEdge(edge).isOccupied());
             assertEquals(0, repo.gameSaves);
             return longestRoadInteractor.execute(inputData);
-        });
+        }, recordWin);
 
         buildInteractor.execute(new BuildInputData(StructureType.ROAD, -1));
 
