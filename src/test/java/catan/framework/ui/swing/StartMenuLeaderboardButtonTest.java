@@ -18,102 +18,105 @@ import javax.swing.JFrame;
 import javax.swing.JTextField;
 import org.junit.jupiter.api.Test;
 
-/** The Leaderboard button of the start menu. Drives the real components without showing a window. */
+/**
+ * The Leaderboard button of the start menu. Drives the real components without showing a window.
+ */
 class StartMenuLeaderboardButtonTest {
 
-    private final StartMenuViewModel viewModel =
-            new StartMenuViewModel(List.of("Toronto", "London"));
-    private final List<StartGameInputData> started = new ArrayList<>();
-    private final StartMenuView view =
-            new StartMenuView(viewModel, new StartGameController(started::add), Runnable::run);
+  private final StartMenuViewModel viewModel = new StartMenuViewModel(List.of("Toronto", "London"));
+  private final List<StartGameInputData> started = new ArrayList<>();
+  private final StartMenuView view =
+      new StartMenuView(viewModel, new StartGameController(started::add), Runnable::run);
 
-    private final List<String> calls = new ArrayList<>();
-    private final List<Window> openedOver = new ArrayList<>();
-    private final LeaderboardController controller = new LeaderboardController(data -> calls.add("show"));
-    private final Consumer<Window> opener = window -> {
+  private final List<String> calls = new ArrayList<>();
+  private final List<Window> openedOver = new ArrayList<>();
+  private final LeaderboardController controller =
+      new LeaderboardController(data -> calls.add("show"));
+  private final Consumer<Window> opener =
+      window -> {
         calls.add("open");
         openedOver.add(window);
-    };
+      };
 
-    private JButton button() {
-        return find(view, "leaderboard", JButton.class);
+  private JButton button() {
+    return find(view, "leaderboard", JButton.class);
+  }
+
+  @Test
+  void theButtonIsHiddenUntilTheLeaderboardIsSetUp() {
+    assertNotNull(button());
+    assertFalse(button().isVisible());
+  }
+
+  @Test
+  void afterSetUpTheButtonIsVisibleAndEnabled() {
+    view.setLeaderboard(controller, opener);
+
+    assertTrue(button().isVisible());
+    assertTrue(button().isEnabled());
+    assertEquals("Leaderboard", button().getText());
+  }
+
+  @Test
+  void pressingLoadsTheLeaderboardFirstAndOpensTheDialogLast() {
+    view.setLeaderboard(controller, opener);
+
+    button().doClick();
+
+    assertEquals(List.of("show", "open"), calls);
+  }
+
+  @Test
+  void everyPressLoadsAgain() {
+    view.setLeaderboard(controller, opener);
+
+    button().doClick();
+    button().doClick();
+
+    assertEquals(List.of("show", "open", "show", "open"), calls);
+  }
+
+  @Test
+  void opensOverNoWindowWhenTheViewIsNotInOne() {
+    view.setLeaderboard(controller, opener);
+
+    button().doClick();
+
+    assertEquals(1, openedOver.size());
+    assertNull(openedOver.get(0));
+  }
+
+  @Test
+  void opensOverTheWindowThatHoldsTheView() {
+    assumeFalse(GraphicsEnvironment.isHeadless());
+    JFrame frame = new JFrame();
+    try {
+      frame.add(view);
+      view.setLeaderboard(controller, opener);
+
+      button().doClick();
+
+      assertSame(frame, openedOver.get(0));
+    } finally {
+      frame.dispose();
     }
+  }
 
-    @Test
-    void theButtonIsHiddenUntilTheLeaderboardIsSetUp() {
-        assertNotNull(button());
-        assertFalse(button().isVisible());
-    }
+  @Test
+  void pressingDoesNotStartAGameOrChangeTheForm() {
+    view.setLeaderboard(controller, opener);
+    find(view, "name1", JTextField.class).setText("Ann");
 
-    @Test
-    void afterSetUpTheButtonIsVisibleAndEnabled() {
-        view.setLeaderboard(controller, opener);
+    button().doClick();
 
-        assertTrue(button().isVisible());
-        assertTrue(button().isEnabled());
-        assertEquals("Leaderboard", button().getText());
-    }
+    assertTrue(started.isEmpty());
+    assertEquals("Ann", find(view, "name1", JTextField.class).getText());
+    assertTrue(find(view, "start", JButton.class).isEnabled());
+  }
 
-    @Test
-    void pressingLoadsTheLeaderboardFirstAndOpensTheDialogLast() {
-        view.setLeaderboard(controller, opener);
-
-        button().doClick();
-
-        assertEquals(List.of("show", "open"), calls);
-    }
-
-    @Test
-    void everyPressLoadsAgain() {
-        view.setLeaderboard(controller, opener);
-
-        button().doClick();
-        button().doClick();
-
-        assertEquals(List.of("show", "open", "show", "open"), calls);
-    }
-
-    @Test
-    void opensOverNoWindowWhenTheViewIsNotInOne() {
-        view.setLeaderboard(controller, opener);
-
-        button().doClick();
-
-        assertEquals(1, openedOver.size());
-        assertNull(openedOver.get(0));
-    }
-
-    @Test
-    void opensOverTheWindowThatHoldsTheView() {
-        assumeFalse(GraphicsEnvironment.isHeadless());
-        JFrame frame = new JFrame();
-        try {
-            frame.add(view);
-            view.setLeaderboard(controller, opener);
-
-            button().doClick();
-
-            assertSame(frame, openedOver.get(0));
-        } finally {
-            frame.dispose();
-        }
-    }
-
-    @Test
-    void pressingDoesNotStartAGameOrChangeTheForm() {
-        view.setLeaderboard(controller, opener);
-        find(view, "name1", JTextField.class).setText("Ann");
-
-        button().doClick();
-
-        assertTrue(started.isEmpty());
-        assertEquals("Ann", find(view, "name1", JTextField.class).getText());
-        assertTrue(find(view, "start", JButton.class).isEnabled());
-    }
-
-    @Test
-    void setLeaderboardRejectsNulls() {
-        assertThrows(NullPointerException.class, () -> view.setLeaderboard(null, opener));
-        assertThrows(NullPointerException.class, () -> view.setLeaderboard(controller, null));
-    }
+  @Test
+  void setLeaderboardRejectsNulls() {
+    assertThrows(NullPointerException.class, () -> view.setLeaderboard(null, opener));
+    assertThrows(NullPointerException.class, () -> view.setLeaderboard(controller, null));
+  }
 }

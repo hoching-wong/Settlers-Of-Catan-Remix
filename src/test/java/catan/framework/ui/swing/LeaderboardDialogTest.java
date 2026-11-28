@@ -14,31 +14,31 @@ import org.junit.jupiter.api.Test;
 /** Builds the dialog but never opens it. Skipped where there is no display. */
 class LeaderboardDialogTest {
 
-    private final LeaderboardPanel panel = new LeaderboardPanel(new LeaderboardViewModel());
+  private final LeaderboardPanel panel = new LeaderboardPanel(new LeaderboardViewModel());
 
-    @BeforeEach
-    void needsADisplay() {
-        assumeFalse(GraphicsEnvironment.isHeadless());
-    }
+  @BeforeEach
+  void needsADisplay() {
+    assumeFalse(GraphicsEnvironment.isHeadless());
+  }
 
-    @Test
-    void isAModalDialogTitledLeaderboardHoldingThePanel() {
-        LeaderboardDialog dialog = new LeaderboardDialog(null, panel);
+  @Test
+  void isAModalDialogTitledLeaderboardHoldingThePanel() {
+    LeaderboardDialog dialog = new LeaderboardDialog(null, panel);
 
-        assertEquals("Leaderboard", dialog.getTitle());
-        assertTrue(dialog.isModal());
-        assertSame(dialog, SwingUtilities.getWindowAncestor(panel));
-        dialog.dispose();
-    }
+    assertEquals("Leaderboard", dialog.getTitle());
+    assertTrue(dialog.isModal());
+    assertSame(dialog, SwingUtilities.getWindowAncestor(panel));
+    dialog.dispose();
+  }
 
-    @Test
-    void theCloseButtonDisposesTheDialog() {
-        LeaderboardDialog dialog = new LeaderboardDialog(null, panel);
-        JButton close = find(dialog.getContentPane(), "close", JButton.class);
+  @Test
+  void theCloseButtonDisposesTheDialog() {
+    LeaderboardDialog dialog = new LeaderboardDialog(null, panel);
+    JButton close = find(dialog.getContentPane(), "close", JButton.class);
 
-        assertNotNull(close);
-        close.doClick();
+    assertNotNull(close);
+    close.doClick();
 
-        assertFalse(dialog.isDisplayable());
-    }
+    assertFalse(dialog.isDisplayable());
+  }
 }

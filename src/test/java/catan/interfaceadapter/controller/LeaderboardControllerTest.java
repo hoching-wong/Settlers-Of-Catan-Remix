@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Test;
 
 class LeaderboardControllerTest {
 
-    @Test
-    void showAsksTheUseCaseForTheLeaderboardOnce() {
-        List<LeaderboardInputData> calls = new ArrayList<>();
-        LeaderboardInputBoundary fake = calls::add;
+  @Test
+  void showAsksTheUseCaseForTheLeaderboardOnce() {
+    List<LeaderboardInputData> calls = new ArrayList<>();
+    LeaderboardInputBoundary fake = calls::add;
 
-        new LeaderboardController(fake).show();
+    new LeaderboardController(fake).show();
 
-        assertEquals(1, calls.size());
-    }
+    assertEquals(1, calls.size());
+  }
 }
